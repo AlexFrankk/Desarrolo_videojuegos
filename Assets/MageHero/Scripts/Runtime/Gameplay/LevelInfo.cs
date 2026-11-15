@@ -12,5 +12,7 @@ namespace MageHero
         public ZoneInfo[] zones;
         public float worldHalfSize = 108f;
         public Texture2D mapTexture;
+
+        void Start() => MageAudio.PlayLevelAmbience(this);
     }
 }
