@@ -48,14 +48,5 @@ namespace MageHero
             return go.GetComponent<Canvas>();
         }
     }
-
-    /// Hace que el objeto mire siempre a la cámara principal.
-    public class Billboard : MonoBehaviour
-    {
-        void LateUpdate()
-        {
-            var c = Camera.main;
-            if (c != null) transform.rotation = c.transform.rotation;
-        }
-    }
+    // Billboard está en Billboard.cs: Unity solo guarda bien en escenas los MonoBehaviour cuyo archivo se llama como la clase.
 }

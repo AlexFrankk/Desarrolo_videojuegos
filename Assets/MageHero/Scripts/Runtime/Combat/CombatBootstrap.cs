@@ -32,6 +32,7 @@ namespace MageHero
             SetupPlayer(player);
             int enemies = SetupEnemies();
             SetupHud();
+            Billboard.RestoreOnWorldLabels();
             Debug.Log($"[MageHero] Combate listo en '{scene.name}': {enemies} enemigos persiguen al mago.");
         }
 

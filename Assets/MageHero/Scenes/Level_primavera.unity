@@ -12548,7 +12548,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 135972405}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 2014817520}
+  m_Script: {fileID: 11500000, guid: fd2fd04fe9ee4c5abe383561c06e4231, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MageHero.Billboard
 --- !u!223 &135972408
@@ -23683,7 +23683,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 267718548}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 2014817520}
+  m_Script: {fileID: 11500000, guid: fd2fd04fe9ee4c5abe383561c06e4231, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MageHero.Billboard
 --- !u!223 &267718551
@@ -58760,7 +58760,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 636953281}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 2014817520}
+  m_Script: {fileID: 11500000, guid: fd2fd04fe9ee4c5abe383561c06e4231, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MageHero.Billboard
 --- !u!223 &636953284
@@ -67272,7 +67272,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 735846417}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 2014817520}
+  m_Script: {fileID: 11500000, guid: fd2fd04fe9ee4c5abe383561c06e4231, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MageHero.Billboard
 --- !u!223 &735846420
@@ -98599,7 +98599,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 1033601209}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 2014817520}
+  m_Script: {fileID: 11500000, guid: fd2fd04fe9ee4c5abe383561c06e4231, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MageHero.Billboard
 --- !u!223 &1033601212
@@ -103415,7 +103415,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 1078833358}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 2014817520}
+  m_Script: {fileID: 11500000, guid: fd2fd04fe9ee4c5abe383561c06e4231, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MageHero.Billboard
 --- !u!223 &1078833361
@@ -157801,7 +157801,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 1567765734}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 2014817520}
+  m_Script: {fileID: 11500000, guid: fd2fd04fe9ee4c5abe383561c06e4231, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MageHero.Billboard
 --- !u!223 &1567765737
@@ -169947,7 +169947,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 1668778023}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 2014817520}
+  m_Script: {fileID: 11500000, guid: fd2fd04fe9ee4c5abe383561c06e4231, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MageHero.Billboard
 --- !u!223 &1668778026
@@ -208526,7 +208526,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 2064846484}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 2014817520}
+  m_Script: {fileID: 11500000, guid: fd2fd04fe9ee4c5abe383561c06e4231, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MageHero.Billboard
 --- !u!223 &2064846487
