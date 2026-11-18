@@ -4,9 +4,10 @@ using UnityEngine.Events;
 
 namespace MageHero
 {
-    /// Cuando la vida del mago llega a 0 NO se cambia de escena: se reinicia al instante en la
-    /// posición exacta donde murió, con la vida llena, unos segundos de invulnerabilidad (parpadeo)
-    /// y los enemigos cercanos se retiran para no encadenar muertes.
+    /// Cuando la vida del mago llega a 0 se abre la pantalla de Game Over (GameOverScreen). Si el jugador
+    /// resuelve el problema, ReviveHere() lo reinicia en la posición donde murió, con la vida llena,
+    /// unos segundos de invulnerabilidad (parpadeo) y los enemigos cercanos se retiran para no encadenar muertes.
+    /// Sin GameOverScreen en la escena, revive al instante (comportamiento anterior).
     [RequireComponent(typeof(HealthSystem), typeof(CharacterController))]
     public class PlayerRespawn3D : MonoBehaviour
     {
@@ -43,9 +44,17 @@ namespace MageHero
         void OnDied(HealthSystem _)
         {
             Deaths++;
+            LastDeathPosition = transform.position;
+            // Con pantalla de Game Over: el mago solo revive si resuelve el problema (GameOverScreen llama a ReviveHere).
+            if (GameOverScreen.Instance != null) { GameOverScreen.Instance.Show(this); return; }
+            ReviveHere();
+        }
+
+        /// Revive al mago donde cayó, con la vida llena y unos segundos de invulnerabilidad.
+        public void ReviveHere()
+        {
             Vector3 pos = transform.position;
             Quaternion rot = transform.rotation;
-            LastDeathPosition = pos;
 
             if (pos.y < minValidY && safety != null) { safety.RespawnAtSafe(); pos = transform.position; }
 
@@ -56,7 +65,7 @@ namespace MageHero
 
             health.Revive(respawnInvulnerability);
             EnemyAI3D.CalmAround(pos, calmEnemiesRadius, calmEnemiesSeconds);
-            if (UIManager.Instance != null) UIManager.Instance.ShowMessage("¡Has caído! Sigue intentándolo", 2f);
+            if (UIManager.Instance != null) UIManager.Instance.ShowMessage("¡Has revivido! Sigue intentándolo", 2f);
             onRespawned.Invoke();
             StopAllCoroutines();
             StartCoroutine(Blink(respawnInvulnerability));

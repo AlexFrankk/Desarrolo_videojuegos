@@ -18,7 +18,12 @@ La rama `main` ya contiene el proyecto completo (Assets, escenas, scripts y sett
 Alternativa: crea un proyecto 3D (URP) y importa `MageHero.unitypackage` (Assets > Import Package > Custom Package). Requiere Input System y uGUI.
 
 ## Controles
-WASD caminar · Shift correr · Espacio saltar · Clic/Enter hechizo (Primavera) · Q/E o arrastrar con clic derecho girar cámara · Z/X o rueda zoom · M mapa · Esc menú · 1/2/3 elegir nivel en el menú.
+WASD caminar · Shift correr · Espacio saltar · Clic/Enter hechizo · Q/E o arrastrar con clic derecho girar cámara · Z/X o rueda zoom · M mapa · Esc menú · 1/2/3 elegir nivel en el menú.
+
+## Combate y Game Over
+En los 3 niveles los enemigos numéricos persiguen y atacan al mago (`CombatBootstrap` lo prepara al cargar cada nivel).
+Si la vida del mago llega a 0 aparece la pantalla de **Game Over**: con *Resolver problema* sale una ecuación con 4 opciones;
+si aciertas, el mago revive donde cayó; si fallas, vuelves al menú de inicio (`GameOverScreen`).
 
 ## Estructura (Assets/MageHero)
 - `Scripts/Runtime/Core`: `LevelData` (datos de los 3 niveles), `World` (altura, montañas, rutas, río), `LevelModel`.
