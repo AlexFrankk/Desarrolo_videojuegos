@@ -3,13 +3,20 @@ using UnityEngine.InputSystem;
 
 namespace MageHero
 {
-    /// Cámara en perspectiva, tercera persona, cercana y cenital (~54°). Q/E girar, Z/X o rueda: zoom.
+    /// Cámara en perspectiva, tercera persona, cercana y cenital (~54°).
+    /// Q/E o arrastrar con clic derecho / rueda pulsada: girar e inclinar. Z/X o rueda: zoom.
     [RequireComponent(typeof(Camera))]
     public class IsoCameraFollow : MonoBehaviour
     {
         public Transform target;
         public float yaw = 0f, pitch = 54.4f, distance = 17f, minDistance = 9f, maxDistance = 48f;
         public float fieldOfView = 46f, followSharpness = 5f, lookHeight = 0.8f, groundClearance = 3f;
+
+        [Header("Ratón (arrastrar con clic derecho o rueda pulsada)")]
+        public float mouseYawSpeed = 0.25f;
+        public float mousePitchSpeed = 0.18f;
+        public bool invertY = false;
+        public float minPitch = 20f, maxPitch = 80f;
         Vector3 focus;
         Camera cam;
 
@@ -30,8 +37,19 @@ namespace MageHero
                 yaw += ((kb.qKey.isPressed ? 1f : 0f) - (kb.eKey.isPressed ? 1f : 0f)) * 69f * Time.deltaTime;
                 distance += ((kb.xKey.isPressed ? 1f : 0f) - (kb.zKey.isPressed ? 1f : 0f)) * 14f * Time.deltaTime;
             }
-            if (Mouse.current != null) distance -= Mouse.current.scroll.ReadValue().y * 0.01f;
+            var mouse = Mouse.current;
+            if (mouse != null)
+            {
+                distance -= mouse.scroll.ReadValue().y * 0.01f;
+                if (mouse.rightButton.isPressed || mouse.middleButton.isPressed)
+                {
+                    Vector2 d = mouse.delta.ReadValue();
+                    yaw += d.x * mouseYawSpeed;
+                    pitch += (invertY ? d.y : -d.y) * mousePitchSpeed;
+                }
+            }
             distance = Mathf.Clamp(distance, minDistance, maxDistance);
+            pitch = Mathf.Clamp(pitch, minPitch, maxPitch);
 
             focus = Vector3.Lerp(focus, target.position, 1f - Mathf.Exp(-followSharpness * Time.deltaTime));
             Quaternion rot = Quaternion.Euler(pitch, yaw, 0f);

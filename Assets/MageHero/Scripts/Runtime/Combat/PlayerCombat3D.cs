@@ -4,7 +4,7 @@ using UnityEngine.InputSystem;
 
 namespace MageHero
 {
-    /// Ataque mágico del mago: Espacio, clic izquierdo o botón Oeste del mando.
+    /// Ataque mágico del mago: Enter, clic izquierdo o botón Oeste del mando.
     /// Instancia un Projectile3D frente al personaje. Con puntería asistida apunta al enemigo
     /// más cercano dentro de un cono (útil con cámara isométrica y terreno con desniveles).
     [RequireComponent(typeof(HealthSystem))]
@@ -37,7 +37,8 @@ namespace MageHero
             health = GetComponent<HealthSystem>();
             health.team = Team.Player;
             health.destroyOnDeath = false;
-            fire = new InputAction("MagicAttack", InputActionType.Button, "<Keyboard>/space");
+            fire = new InputAction("MagicAttack", InputActionType.Button, "<Keyboard>/enter");
+            fire.AddBinding("<Keyboard>/numpadEnter");
             fire.AddBinding("<Mouse>/leftButton");
             fire.AddBinding("<Gamepad>/buttonWest");
         }

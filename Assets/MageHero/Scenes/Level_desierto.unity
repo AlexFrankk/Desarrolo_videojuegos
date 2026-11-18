@@ -4562,7 +4562,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 1
     m_VerticalOverflow: 1
     m_LineSpacing: 1
-  m_Text: "WASD: caminar \xB7 Shift: correr \xB7 Q/E: girar \xB7 Z/X o rueda: zoom
+  m_Text: "WASD: caminar \xB7 Shift: correr \xB7 Espacio: saltar \xB7 Q/E o clic derecho: girar \xB7 Z/X o rueda: zoom
     \xB7 M: mapa \xB7 Esc: men\xFA"
 --- !u!222 &48997397
 CanvasRenderer:

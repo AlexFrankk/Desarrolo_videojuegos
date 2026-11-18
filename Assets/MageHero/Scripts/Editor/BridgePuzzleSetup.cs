@@ -110,7 +110,7 @@ namespace MageHero.Editor
             var hint = hud.transform.Find("Hint");
             if (hint != null && hint.TryGetComponent(out Text hintText))
             {
-                hintText.text = "WASD: caminar · Shift: correr · Clic: hechizo al punto · Espacio: hechizo al frente · F: interactuar · H: pista · Q/E: girar · M: mapa · Esc: menú";
+                hintText.text = "WASD: caminar · Shift: correr · Clic: hechizo al punto · Espacio: saltar · Enter: hechizo al frente · F: interactuar · H: pista · Q/E o clic derecho: girar · M: mapa · Esc: menú";
                 hintText.rectTransform.sizeDelta = new Vector2(1200, 24);
             }
             EditorUtility.SetDirty(hud);

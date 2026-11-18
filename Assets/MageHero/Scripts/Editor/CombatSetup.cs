@@ -54,9 +54,9 @@ namespace MageHero.Editor
             if (hint != null)
             {
                 var t = hint.GetComponent<Text>();
-                if (t != null && !t.text.Contains("Espacio"))
+                if (t != null && !t.text.Contains("Clic"))
                 {
-                    t.text = "WASD: caminar · Shift: correr · Espacio/Clic: hechizo · Q/E: girar · Z/X: zoom · M: mapa · Esc: menú";
+                    t.text = "WASD: caminar · Shift: correr · Espacio: saltar · Enter/Clic: hechizo · Q/E o clic derecho: girar · Z/X: zoom · M: mapa · Esc: menú";
                     t.rectTransform.sizeDelta = new Vector2(900, 24);
                 }
             }
@@ -98,7 +98,7 @@ namespace MageHero.Editor
 
             EditorSceneManager.MarkSceneDirty(scene);
             EditorSceneManager.SaveScene(scene);
-            Debug.Log($"[MageHero] Combate configurado: jugador (vida 100, hechizo con Espacio/Clic), HUD de vida, {enemies} enemigos con IA y barra, " +
+            Debug.Log($"[MageHero] Combate configurado: jugador (vida 100, hechizo con Enter/Clic), HUD de vida, {enemies} enemigos con IA y barra, " +
                       $"EnemySpawner con {spawnerGo.transform.childCount} puntos. Prefab del hechizo: {ProjectilePath}");
         }
 

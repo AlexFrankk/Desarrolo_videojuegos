@@ -210560,8 +210560,8 @@ MonoBehaviour:
     m_HorizontalOverflow: 1
     m_VerticalOverflow: 1
     m_LineSpacing: 1
-  m_Text: "WASD: caminar \xB7 Shift: correr \xB7 Clic: hechizo al punto \xB7 Espacio:
-    hechizo al frente \xB7 F: interactuar \xB7 H: pista \xB7 Q/E: girar \xB7 M: mapa
+  m_Text: "WASD: caminar \xB7 Shift: correr \xB7 Clic: hechizo al punto \xB7 Espacio: saltar \xB7 Enter:
+    hechizo al frente \xB7 F: interactuar \xB7 H: pista \xB7 Q/E o clic derecho: girar \xB7 M: mapa
     \xB7 Esc: men\xFA"
 --- !u!222 &2077906293
 CanvasRenderer:

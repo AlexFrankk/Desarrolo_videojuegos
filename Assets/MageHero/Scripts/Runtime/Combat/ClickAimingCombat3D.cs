@@ -6,7 +6,7 @@ namespace MageHero
 {
     /// Ataque mágico dirigido con el ratón: al hacer clic se lanza un Raycast desde la cámara principal
     /// hacia la posición del cursor y el hechizo viaja EXACTAMENTE a ese punto del mundo 3D.
-    /// Si el clic toca a un enemigo se apunta al centro de su cuerpo. Espacio sigue disparando al frente.
+    /// Si el clic toca a un enemigo se apunta al centro de su cuerpo. Enter dispara al frente (Espacio es saltar).
     /// Sustituye a PlayerCombat3D (no deben estar los dos activos).
     [RequireComponent(typeof(HealthSystem))]
     public class ClickAimingCombat3D : MonoBehaviour
@@ -68,7 +68,7 @@ namespace MageHero
             }
 
             var kb = Keyboard.current;
-            if (keyboardFiresForward && kb != null && kb.spaceKey.wasPressedThisFrame)
+            if (keyboardFiresForward && kb != null && (kb.enterKey.wasPressedThisFrame || kb.numpadEnterKey.wasPressedThisFrame))
                 FireAt(Origin() + transform.forward * 20f, false);
         }
 
