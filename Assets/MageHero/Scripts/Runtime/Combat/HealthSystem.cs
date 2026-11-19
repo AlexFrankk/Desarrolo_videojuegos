@@ -40,6 +40,8 @@ namespace MageHero
         public event Action<HealthSystem> Changed;
 
         public static readonly List<HealthSystem> Alive = new List<HealthSystem>();
+        /// Se dispara cuando muere CUALQUIER entidad (lo usa ProgressionManager para contar enemigos derrotados).
+        public static event Action<HealthSystem> AnyDied;
 
         public float Current { get; private set; }
         public float Normalized => maxHealth > 0f ? Current / maxHealth : 0f;
@@ -110,6 +112,7 @@ namespace MageHero
             IsDead = true;
             Alive.Remove(this);
             Died?.Invoke(this);
+            AnyDied?.Invoke(this);
             onDied.Invoke();
             if (destroyOnDeath) Destroy(gameObject, destroyDelay);
         }

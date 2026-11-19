@@ -31,6 +31,7 @@ namespace MageHero
         public void Launch(Vector3 direction, Team owner)
         {
             ownerTeam = owner;
+            if (owner == Team.Player) damage *= PlayerLevel.DamageMultiplier;   // los hechizos escalan con el nivel del mago
             direction = direction.sqrMagnitude > 0.0001f ? direction.normalized : transform.forward;
             transform.rotation = Quaternion.LookRotation(direction);
             rb.linearVelocity = direction * speed;

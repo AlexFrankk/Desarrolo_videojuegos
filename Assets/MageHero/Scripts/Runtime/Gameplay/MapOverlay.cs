@@ -31,7 +31,9 @@ namespace MageHero
         static readonly Color EnemyCol = new Color(0.93f, 0.27f, 0.32f, 1f);
 
         Color accent = Gold;
-        RectTransform card, pulse, enemyLayer, playerMarker;
+        RectTransform card, pulse, enemyLayer, playerMarker, bossLayer;
+        int drawnBossVersion = -1;
+        static readonly Color BossCol = new Color(0.8f, 0.3f, 1f, 1f);
         Text zoneTitle;
         readonly List<ZoneLabel> labels = new List<ZoneLabel>();
         readonly List<Image> enemyDots = new List<Image>();
@@ -90,6 +92,9 @@ namespace MageHero
             // Enemigos (4 veces por segundo es suficiente)
             enemyTimer -= Time.unscaledDeltaTime;
             if (enemyTimer <= 0f) { enemyTimer = 0.25f; RefreshEnemies(); }
+
+            // Camino al jefe final (BossPath)
+            if (drawnBossVersion != BossPath.Version) DrawBossRoute();
         }
 
         public void Toggle() { if (panel != null) SetOpen(!panel.activeSelf); }
@@ -203,6 +208,7 @@ namespace MageHero
             Place(n.rectTransform, new Vector2(.5f, .5f), new Vector2(0f, -6f), new Vector2(30f, 20f));
 
             // Capas sobre el mapa
+            bossLayer = Rect("BossRoute", mapRect); Stretch(bossLayer); drawnBossVersion = -1;
             enemyLayer = Rect("Enemies", mapRect); Stretch(enemyLayer);
             var labelLayer = Rect("Zones", mapRect); Stretch(labelLayer);
             BuildZoneLabels(labelLayer);
@@ -240,6 +246,7 @@ namespace MageHero
             LegendRow(side, -164f, EnemyCol, circleSprite, "Enemigos numéricos", 10f);
             LegendRow(side, -200f, accent, roundSprite, "Zona donde estás", 14f);
             LegendRow(side, -236f, Navy, roundSprite, "Otras zonas", 14f);
+            LegendRow(side, -272f, BossCol, circleSprite, "Camino al jefe final", 10f);
         }
 
         void LegendRow(Transform parent, float y, Color c, Sprite sp, string label, float size)
@@ -369,6 +376,28 @@ namespace MageHero
                 dot.rectTransform.anchoredPosition = p;
             }
             for (int i = used; i < enemyDots.Count; i++) enemyDots[i].gameObject.SetActive(false);
+        }
+
+        void DrawBossRoute()
+        {
+            drawnBossVersion = BossPath.Version;
+            if (bossLayer == null) return;
+            for (int i = bossLayer.childCount - 1; i >= 0; i--) Destroy(bossLayer.GetChild(i).gameObject);
+            var route = BossPath.MapRoute;
+            if (route == null || route.Length == 0) return;
+            for (int i = 0; i < route.Length; i += 2)
+            {
+                var d = Img("Paso", bossLayer, new Color(BossCol.r, BossCol.g, BossCol.b, 0.85f), circleSprite);
+                Place(d.rectTransform, new Vector2(.5f, .5f), WorldToMap(route[i]), new Vector2(6f, 6f));
+            }
+            Vector2 boss = WorldToMap(new Vector2(BossPath.BossPosition.x, BossPath.BossPosition.z));
+            var ring = Img("Jefe", bossLayer, BossCol, ringSprite);
+            Place(ring.rectTransform, new Vector2(.5f, .5f), boss, new Vector2(30f, 30f));
+            var core = Img("JefeCentro", ring.transform, EnemyCol, circleSprite);
+            Place(core.rectTransform, new Vector2(.5f, .5f), Vector2.zero, new Vector2(14f, 14f));
+            var t = UIText.Make(bossLayer, "JefeTexto", "JEFE", 13, Color.white); t.fontStyle = FontStyle.Bold;
+            var o = t.gameObject.AddComponent<Outline>(); o.effectColor = new Color(0, 0, 0, .8f);
+            Place(t.rectTransform, new Vector2(.5f, .5f), boss + new Vector2(0f, 22f), new Vector2(80f, 18f));
         }
 
         // ------------------------------------------------------------------ utilidades UI
