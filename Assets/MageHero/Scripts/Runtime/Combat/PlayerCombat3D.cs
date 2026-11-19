@@ -78,6 +78,7 @@ namespace MageHero
                 ? Instantiate(projectilePrefab, origin, Quaternion.LookRotation(dir))
                 : CreateDefaultProjectile(origin, dir);
             p.Launch(dir, Team.Player);
+            MageAudio.PlayAttack(gameObject);
             Cast?.Invoke();
         }
 
