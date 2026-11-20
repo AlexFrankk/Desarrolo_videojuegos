@@ -24,14 +24,14 @@ namespace MageHero.Editor
             int done = 0;
             try
             {
-                var defs = LevelData.All();
+                var defs = LevelMenu.Entries();
                 for (int i = 0; i < defs.Length; i++)
                 {
                     string scenePath = AssetLib.Root + "/Scenes/Level_" + defs[i].id + ".unity";
                     EditorUtility.DisplayProgressBar("Capturando escenarios", defs[i].name, (float)i / defs.Length);
                     if (!File.Exists(scenePath)) { Debug.LogWarning("[MageHero] No existe " + scenePath); continue; }
                     EditorSceneManager.OpenScene(scenePath, OpenSceneMode.Single);
-                    if (Capture(Folder + "/" + defs[i].id + ".png")) done++;
+                    if (CaptureOpenScene(defs[i].id)) done++;
                 }
             }
             finally
@@ -43,20 +43,33 @@ namespace MageHero.Editor
             Debug.Log($"[MageHero] {done} imágenes de escenarios guardadas en {Folder}.");
         }
 
-        static bool Capture(string path)
+        /// Captura la escena abierta como imagen del escenario <id> (la usa también VolcanoBuilder al generar el nivel).
+        public static bool CaptureOpenScene(string id)
+        {
+            if (!Directory.Exists(Folder)) Directory.CreateDirectory(Folder);
+            string path = Folder + "/" + id + ".png";
+            // El cráter es pequeño: se encuadra desde la entrada mirando al jefe y al volcán del fondo.
+            bool ok = id == "volcan"
+                ? Capture(path, new Vector3(0f, 0f, 0f), 26f, 0f, 30f)
+                : Capture(path, null, 32f, -35f, 38f);
+            if (ok) AssetDatabase.ImportAsset(path);
+            return ok;
+        }
+
+        static bool Capture(string path, Vector3? focusOverride, float pitch, float yaw, float distance)
         {
             var cam = Camera.main;
             if (cam == null) { Debug.LogWarning("[MageHero] La escena no tiene Main Camera."); return false; }
             var player = GameObject.FindWithTag("Player");
-            Vector3 focus = player != null ? player.transform.position : Vector3.zero;
+            Vector3 focus = focusOverride ?? (player != null ? player.transform.position : Vector3.zero);
 
             // Vista aérea en 3/4, más alejada que la cámara de juego para que se vea el paisaje.
             var t = cam.transform;
             Vector3 oldPos = t.position; Quaternion oldRot = t.rotation; float oldFov = cam.fieldOfView;
             var oldTarget = cam.targetTexture;
-            Quaternion rot = Quaternion.Euler(32f, -35f, 0f);
+            Quaternion rot = Quaternion.Euler(pitch, yaw, 0f);
             Vector3 look = focus + Vector3.up * 1.5f;
-            t.position = look - rot * Vector3.forward * 38f;
+            t.position = look - rot * Vector3.forward * distance;
             t.rotation = Quaternion.LookRotation(look - t.position, Vector3.up);
             cam.fieldOfView = 50f;
 

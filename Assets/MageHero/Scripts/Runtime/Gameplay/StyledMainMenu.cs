@@ -83,7 +83,7 @@ namespace MageHero
             loading = true;
             Time.timeScale = 1f;
             string niceName = scene;
-            foreach (var d in LevelData.All()) if ("Level_" + d.id == scene) niceName = d.name;
+            foreach (var d in LevelMenu.Entries()) if (LevelMenu.SceneName(d) == scene) niceName = d.name;
             ShowLoading("Cargando...", niceName, 0f);
             Debug.Log($"[MageHero] Cargando escena '{scene}'...");
             yield return null;                                   // dibuja la pantalla de carga antes de empezar
@@ -183,24 +183,32 @@ namespace MageHero
             MenuStyle.Stretch((RectTransform)levelsPage.transform);
 
             Ribbon(levelsPage.transform, "Elige un escenario", new Vector2(0, -78), new Vector2(760, 120), 50);
-            var hint = MenuStyle.Label(levelsPage.transform, "Haz clic en una tarjeta o pulsa 1, 2 o 3", 20, new Color(1, 1, 1, .85f), new Color(0, 0, 0, .6f), false);
+            var defs = LevelMenu.Entries();
+            string keys = defs.Length <= 1 ? "1" : string.Join(", ", System.Linq.Enumerable.Range(1, defs.Length - 1)) + " o " + defs.Length;
+            var hint = MenuStyle.Label(levelsPage.transform, "Haz clic en una tarjeta o pulsa " + keys, 20, new Color(1, 1, 1, .85f), new Color(0, 0, 0, .6f), false);
             MenuStyle.Place(hint.rectTransform, new Vector2(.5f, 1f), new Vector2(0, -150), new Vector2(800, 30));
 
-            var defs = LevelData.All();
+            // Con más de 3 escenarios las tarjetas se encogen para caber en el ancho de referencia (1280).
+            const float step = 395f, maxRow = 1240f;
+            float scale = Mathf.Min(1f, maxRow / (defs.Length * step));
             for (int i = 0; i < defs.Length; i++)
             {
-                float x = (i - (defs.Length - 1) / 2f) * 395f;
-                LevelCard(levelsPage.transform, defs[i], i, new Vector2(x, -55));
+                float x = (i - (defs.Length - 1) / 2f) * step * scale;
+                // La escala va en un contenedor: ButtonBounce anima la escala de la propia tarjeta.
+                var slot = MenuStyle.Rect("Slot_" + defs[i].id, levelsPage.transform);
+                MenuStyle.Place(slot, new Vector2(.5f, .5f), new Vector2(x, -55 + (1f - scale) * 60f), new Vector2(365, 480));
+                slot.localScale = new Vector3(scale, scale, 1f);
+                LevelCard(slot, defs[i], i, Vector2.zero);
             }
 
             var back = MenuStyle.GlossyButton("BackButton", levelsPage.transform, "< Volver", MenuStyle.Green, 28, ShowMain);
             MenuStyle.Place((RectTransform)back.transform, new Vector2(0f, 0f), new Vector2(125, 50), new Vector2(200, 62));
         }
 
-        void LevelCard(Transform parent, LevelDef d, int index, Vector2 pos)
+        RectTransform LevelCard(Transform parent, LevelDef d, int index, Vector2 pos)
         {
             Color accent; if (!ColorUtility.TryParseHtmlString(d.accent, out accent)) accent = MenuStyle.Orange;
-            string scene = "Level_" + d.id;
+            string scene = LevelMenu.SceneName(d);
 
             var card = MenuStyle.Image("Card_" + d.id, parent,
                 MenuStyle.RoundedRect(new Color(0.16f, 0.21f, 0.28f, 0.95f), new Color(0.09f, 0.12f, 0.17f, 0.95f), accent, 24, 5), Color.white);
@@ -250,6 +258,7 @@ namespace MageHero
 
             var play = MenuStyle.GlossyButton("PlayButton", card.transform, "¡Jugar!", accent, 34, () => Load(scene));
             MenuStyle.Place((RectTransform)play.transform, new Vector2(.5f, 0f), new Vector2(0, 50), new Vector2(240, 70));
+            return card.rectTransform;
         }
 
         /// Pone la imagen del escenario recortándola para llenar el hueco sin deformarse.

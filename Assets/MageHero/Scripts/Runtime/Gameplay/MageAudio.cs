@@ -14,6 +14,8 @@ namespace MageHero
                 case "desierto": resourceName = "Desierto"; break;
                 case "otono": resourceName = "Otono"; break;
                 case "primavera": resourceName = "Primavera"; break;
+                // Nivel del jefe: usa Audio/Volcan si se agrega; mientras tanto, el ambiente del desierto.
+                case "volcan": resourceName = Resources.Load<AudioClip>("Audio/Volcan") != null ? "Volcan" : "Desierto"; break;
                 default:
                     Debug.LogWarning($"No ambience is configured for level '{levelInfo.levelId}'.", levelInfo);
                     return;

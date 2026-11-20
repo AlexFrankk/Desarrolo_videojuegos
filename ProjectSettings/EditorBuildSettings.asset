@@ -17,5 +17,8 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/MageHero/Scenes/Level_primavera.unity
     guid: 389981af22c907440b8f5c9aaade1a1b
+  - enabled: 1
+    path: Assets/MageHero/Scenes/Level_volcan.unity
+    guid: 36fdcfb48b448fa4cb053ee5bc19c8b2
   m_configObjects: {}
   m_UseUCBPForAssetBundles: 0

@@ -67,6 +67,8 @@ namespace MageHero.Editor
                     EditorUtility.DisplayProgressBar("Mage Hero", "Generando nivel: " + defs[i].name + " (puede tardar un minuto)", 0.1f + 0.25f * i);
                     LevelBuilder.BuildLevel(defs[i], policy);
                 }
+                EditorUtility.DisplayProgressBar("Mage Hero", "Generando nivel: Cráter de Obsidiana (jefe)", 0.86f);
+                VolcanoBuilder.Build();
                 EditorUtility.DisplayProgressBar("Mage Hero", "Construyendo el menú…", 0.92f);
                 MenuBuilder.Build(defs);
                 RegisterScenes();
@@ -78,7 +80,7 @@ namespace MageHero.Editor
 
         static void RegisterScenes()
         {
-            var paths = new[] { MenuBuilder.ScenePath, LevelBuilder.ScenePath("otono"), LevelBuilder.ScenePath("desierto"), LevelBuilder.ScenePath("primavera") };
+            var paths = new[] { MenuBuilder.ScenePath, LevelBuilder.ScenePath("otono"), LevelBuilder.ScenePath("desierto"), LevelBuilder.ScenePath("primavera"), VolcanoBuilder.ScenePath };
             EditorBuildSettings.scenes = paths.Where(File.Exists).Select(p => new EditorBuildSettingsScene(p, true)).ToArray();
         }
 

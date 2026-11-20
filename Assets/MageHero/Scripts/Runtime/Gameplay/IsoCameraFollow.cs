@@ -20,6 +20,31 @@ namespace MageHero
         Vector3 focus;
         Camera cam;
 
+        // Encuadre de combate (jefes): aleja la cámara y la centra entre el mago y el enemigo.
+        static IsoCameraFollow active;
+        Transform encounter;
+        float encounterExtra, encounterBias, encounterPitch, encounterWeight, encounterTarget;
+
+        /// Aleja la cámara <paramref name="extraDistance"/> y encuadra al mago junto a <paramref name="other"/>.
+        /// <paramref name="bias"/>: 0 = centrado en el mago, 0.5 = punto medio. <paramref name="pitchOffset"/>: grados que
+        /// se baja la cámara (negativo = más de frente, para ver al enemigo y el escenario detrás).
+        public static void SetEncounter(Transform other, float extraDistance = 7f, float bias = 0.45f, float pitchOffset = -12f)
+        {
+            var c = active != null ? active : FindAnyObjectByType<IsoCameraFollow>();
+            if (c == null) return;
+            c.encounter = other; c.encounterExtra = extraDistance; c.encounterBias = bias; c.encounterPitch = pitchOffset; c.encounterTarget = 1f;
+        }
+
+        /// Vuelve suavemente al encuadre normal.
+        public static void ClearEncounter()
+        {
+            var c = active != null ? active : FindAnyObjectByType<IsoCameraFollow>();
+            if (c != null) c.encounterTarget = 0f;
+        }
+
+        void OnEnable() { active = this; }
+        void OnDisable() { if (active == this) active = null; }
+
         void Start()
         {
             cam = GetComponent<Camera>();
@@ -51,10 +76,22 @@ namespace MageHero
             distance = Mathf.Clamp(distance, minDistance, maxDistance);
             pitch = Mathf.Clamp(pitch, minPitch, maxPitch);
 
-            focus = Vector3.Lerp(focus, target.position, 1f - Mathf.Exp(-followSharpness * Time.deltaTime));
-            Quaternion rot = Quaternion.Euler(pitch, yaw, 0f);
-            Vector3 look = focus + Vector3.up * lookHeight;
-            Vector3 pos = look - rot * Vector3.forward * distance;
+            // Encuadre de combate: transición suave (≈1 s) de entrada y salida.
+            encounterWeight = Mathf.MoveTowards(encounterWeight, encounter != null ? encounterTarget : 0f, Time.deltaTime * 0.9f);
+            float ew = Mathf.SmoothStep(0f, 1f, encounterWeight);
+            Vector3 goal = target.position;
+            if (encounter != null && ew > 0f)
+            {
+                Vector3 toOther = encounter.position - target.position; toOther.y = 0f;
+                float far = Mathf.Clamp01(1f - (toOther.magnitude - 18f) / 14f);   // si el enemigo está muy lejos, no lo persigue
+                goal += toOther * encounterBias * far * ew;
+            }
+            if (encounter == null && encounterWeight <= 0f) encounterTarget = 0f;
+
+            focus = Vector3.Lerp(focus, goal, 1f - Mathf.Exp(-followSharpness * Time.deltaTime));
+            Quaternion rot = Quaternion.Euler(Mathf.Clamp(pitch + encounterPitch * ew, minPitch, maxPitch), yaw, 0f);
+            Vector3 look = focus + Vector3.up * (lookHeight + 1.8f * ew);
+            Vector3 pos = look - rot * Vector3.forward * (distance + encounterExtra * ew);
 
             // Evita meterse dentro de montañas: mantiene la cámara por encima del suelo.
             RaycastHit hit;
