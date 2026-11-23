@@ -212,6 +212,7 @@ namespace MageHero
             var nav = b.navigation; nav.mode = Navigation.Mode.None; b.navigation = nav;
             var t = UIText.Make(img.transform, "Label", label, size, fg);
             t.fontStyle = FontStyle.Bold; Stretch(t.rectTransform);
+            ButtonSound.Add(b);
             return b;
         }
 

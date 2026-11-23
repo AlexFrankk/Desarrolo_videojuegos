@@ -45,6 +45,7 @@ namespace MageHero
         void Awake()
         {
             cc = GetComponent<CharacterController>();
+            if (GetComponent<MageFootsteps>() == null) gameObject.AddComponent<MageFootsteps>();
             if (cameraTransform == null && Camera.main != null) cameraTransform = Camera.main.transform;
 
             move = new InputAction("Move", InputActionType.Value);

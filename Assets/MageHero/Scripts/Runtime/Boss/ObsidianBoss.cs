@@ -189,6 +189,7 @@ namespace MageHero
         {
             CurrentState = State.Waking;
             CameraShake3D.Shake(0.35f, 1.2f);
+            MageAudio.PlayBossRoar(transform.position);
             UIManager.Instance?.ShowMessage($"¡{bossName} despierta!", 3f);
             UIManager.Instance?.SetObjective($"Derrota al {bossName}");
             IsoCameraFollow.SetEncounter(transform, cameraExtraDistance, 0.5f, -14f);
@@ -466,6 +467,7 @@ namespace MageHero
                 PhaseTwo = true;
                 ringPop = 1f;
                 CameraShake3D.Shake(0.3f, 0.8f);
+                MageAudio.PlayBossRoar(transform.position, 0.85f);
                 UIManager.Instance?.ShowMessage("¡El núcleo de obsidiana se desborda!", 3f);
             }
         }

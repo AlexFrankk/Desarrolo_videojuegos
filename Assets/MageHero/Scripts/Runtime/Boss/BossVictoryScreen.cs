@@ -57,6 +57,7 @@ namespace MageHero
             var b = go.GetComponent<Button>(); b.targetGraphic = im;
             var t = UIText.Make(go.transform, "Label", label, 20, fg); t.fontStyle = FontStyle.Bold;
             var trt = t.rectTransform; trt.anchorMin = Vector2.zero; trt.anchorMax = Vector2.one; trt.offsetMin = trt.offsetMax = Vector2.zero;
+            ButtonSound.Add(b);
             return b;
         }
     }

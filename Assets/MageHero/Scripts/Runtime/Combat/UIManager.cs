@@ -112,6 +112,12 @@ namespace MageHero
             if (quizExitButton != null) { quizExitButton.onClick.RemoveAllListeners(); quizExitButton.onClick.AddListener(() => CloseQuiz(true)); }
             if (quizHintButton != null) { quizHintButton.onClick.RemoveAllListeners(); quizHintButton.onClick.AddListener(OpenClueFromQuiz); }
             if (clueCloseButton != null) { clueCloseButton.onClick.RemoveAllListeners(); clueCloseButton.onClick.AddListener(CloseClue); }
+
+            // Sonido (después de RemoveAllListeners para que no se borre).
+            foreach (var b in answerButtons) ButtonSound.Add(b);
+            ButtonSound.Add(quizExitButton);
+            ButtonSound.Add(quizHintButton);
+            ButtonSound.Add(clueCloseButton);
         }
 
         void Update()

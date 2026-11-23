@@ -179,6 +179,7 @@ namespace MageHero
             Destroy(bolt);
 
             CameraShake3D.Shake(0.45f, 1.2f);
+            MageAudio.PlayBridgeBreak(gameObject);
             BreakBridge();
             yield return AnimatePieces(true, 1.3f);
             ui?.SetSubtitle("EL GRAN CERO:  Si quieres pasar, resuelve mi ecuación...  ¡si es que puedes!");
