@@ -57,7 +57,7 @@ namespace MageHero
         readonly List<GameObject> deckSegments = new List<GameObject>();
         Renderer deckRenderer;
 
-        class Piece { public Transform t; public Vector3 pos; public Quaternion rot; public Vector3 brokenPos; public Quaternion brokenRot; public Renderer r; public Material mat; }
+        class Piece { public Transform t; public Vector3 pos; public Quaternion rot; public Vector3 brokenPos; public Quaternion brokenRot; public Renderer r; public Material mat; public Renderer original; }
 
         // ------------------------------------------------------------------ Ciclo de vida
         void Awake()
@@ -243,12 +243,35 @@ namespace MageHero
             blocker.enabled = true;
             gapWater.SetActive(true);
             PushPlayerOffBlocker();
+            PushEnemiesOffBridge();
         }
 
         void AddPiece(Transform t, Vector3 brokenPos, Quaternion brokenRot)
         {
             var r = t.GetComponent<Renderer>();
-            pieces.Add(new Piece { t = t, pos = t.position, rot = t.rotation, brokenPos = brokenPos, brokenRot = brokenRot, r = r, mat = r != null ? r.sharedMaterial : null });
+            Renderer original = null;
+            // En los niveles cuyas piezas son estáticas (static batching) moverlas no cambia lo que se ve:
+            // se oculta la original y se anima una copia con la misma forma y material.
+            if (r != null && r.isPartOfStaticBatch)
+            {
+                original = r;
+                var mf = t.GetComponent<MeshFilter>();
+                var proxy = new GameObject(t.name + "_Anim", typeof(MeshFilter), typeof(MeshRenderer));
+                proxy.transform.SetParent(transform, true);
+                proxy.transform.SetPositionAndRotation(t.position, t.rotation);
+                proxy.transform.localScale = t.lossyScale;
+                Mesh mesh = mf != null ? mf.sharedMesh : null;
+                if (mesh == null || mesh.name.StartsWith("Combined Mesh"))
+                {
+                    var tmp = GameObject.CreatePrimitive(t.name.Contains("Piling") ? PrimitiveType.Cylinder : PrimitiveType.Cube);
+                    mesh = tmp.GetComponent<MeshFilter>().sharedMesh; Destroy(tmp);
+                }
+                proxy.GetComponent<MeshFilter>().sharedMesh = mesh;
+                var pr = proxy.GetComponent<MeshRenderer>(); pr.sharedMaterial = r.sharedMaterial;
+                r.enabled = false;
+                t = proxy.transform; r = pr;
+            }
+            pieces.Add(new Piece { t = t, pos = t.position, rot = t.rotation, brokenPos = brokenPos, brokenRot = brokenRot, r = r, mat = r != null ? r.sharedMaterial : null, original = original });
         }
 
         // ------------------------------------------------------------------ Reparación
@@ -269,6 +292,7 @@ namespace MageHero
             foreach (var p in pieces) if (p.r != null) p.r.sharedMaterial = p.mat;
             Destroy(lightGo);
 
+            foreach (var p in pieces) if (p.original != null) { p.original.enabled = true; Destroy(p.t.gameObject); }
             foreach (var s in deckSegments) Destroy(s);
             deckSegments.Clear();
             if (deckRenderer != null) deckRenderer.enabled = true;
@@ -415,6 +439,28 @@ namespace MageHero
             Vector3 local = worldPos - deck.position;
             float d = Mathf.Abs(alongZ ? Vector3.Dot(local, deck.forward) : Vector3.Dot(local, deck.right));
             return d / LongHalf();
+        }
+
+        /// Ningún enemigo debe quedarse flotando sobre el hueco del puente roto.
+        void PushEnemiesOffBridge()
+        {
+            var b = blocker.bounds; b.Expand(1.5f);
+            bool alongZ = deck == null || deck.lossyScale.z >= deck.lossyScale.x;
+            Vector3 axis = alongZ ? (deck != null ? deck.forward : Vector3.forward) : deck.right;
+            foreach (var hs in HealthSystem.Alive.ToArray())
+            {
+                if (hs == null || hs.team != Team.Enemy) continue;
+                var t = hs.transform;
+                if (!b.Contains(new Vector3(t.position.x, b.center.y, t.position.z))) continue;
+                float s = Mathf.Sign(Vector3.Dot(t.position - transform.position, axis)); if (s == 0f) s = 1f;
+                Vector3 target = transform.position + axis * s * (LongHalf() + 1.5f);
+                target.y = t.position.y;
+                var cc = t.GetComponent<CharacterController>();
+                if (cc != null) cc.enabled = false;
+                t.position = target;
+                if (cc != null) cc.enabled = true;
+                HitFX.Spark(target + Vector3.up, new Color(0.6f, 0.2f, 1f));
+            }
         }
 
         void PushPlayerOffBlocker()

@@ -12,6 +12,30 @@ namespace MageHero
         public static Material Toon(Color c) => Get("toon", c, "MageHero/ToonLit", "Universal Render Pipeline/Lit");
         public static Material Glow(Color c) => Get("glow", c, "Universal Render Pipeline/Unlit", "Unlit/Color");
 
+        /// Unlit transparente (alfa del color = opacidad). Para burbujas de escudo y marcas en el suelo.
+        public static Material GlowTransparent(Color c)
+        {
+            string key = "glowT" + ColorUtility.ToHtmlStringRGBA(c);
+            if (cache.TryGetValue(key, out var m) && m != null) return new Material(m);
+            var sh = Shader.Find("Universal Render Pipeline/Unlit") ?? Shader.Find("Sprites/Default");
+            if (sh == null) return null;
+            m = new Material(sh) { name = "glowT_" + ColorUtility.ToHtmlStringRGB(c) };
+            if (m.HasProperty("_BaseColor")) m.SetColor("_BaseColor", c);
+            if (m.HasProperty("_Color")) m.SetColor("_Color", c);
+            if (m.HasProperty("_Surface"))
+            {
+                m.SetFloat("_Surface", 1f); m.SetFloat("_Blend", 0f);
+                m.SetFloat("_SrcBlend", (float)UnityEngine.Rendering.BlendMode.SrcAlpha);
+                m.SetFloat("_DstBlend", (float)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+                m.SetFloat("_ZWrite", 0f); m.SetFloat("_Cull", 0f);
+                m.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
+                m.SetOverrideTag("RenderType", "Transparent");
+            }
+            m.renderQueue = (int)UnityEngine.Rendering.RenderQueue.Transparent;
+            cache[key] = m;
+            return new Material(m);                                   // copia: cada uso puede animar su opacidad
+        }
+
         static Material Get(string kind, Color c, string shader, string fallback)
         {
             string key = kind + ColorUtility.ToHtmlStringRGBA(c);

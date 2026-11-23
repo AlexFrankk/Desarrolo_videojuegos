@@ -32,6 +32,8 @@ namespace MageHero
         {
             ownerTeam = owner;
             if (owner == Team.Player) damage *= PlayerLevel.DamageMultiplier;   // los hechizos escalan con el nivel del mago
+            // La capa Projectiles ignora al jugador: los proyectiles enemigos van en Default para poder golpearle.
+            if (owner == Team.Enemy) foreach (var t in GetComponentsInChildren<Transform>(true)) t.gameObject.layer = 0;
             direction = direction.sqrMagnitude > 0.0001f ? direction.normalized : transform.forward;
             transform.rotation = Quaternion.LookRotation(direction);
             rb.linearVelocity = direction * speed;
@@ -47,13 +49,18 @@ namespace MageHero
             {
                 if (target.team == ownerTeam) return;      // no dañar al lanzador ni a aliados
                 target.TakeDamage(damage);
+                Impact(target);
+                return;
             }
-            Impact();
+            Impact(null);
         }
 
-        void Impact()
+        void Impact(HealthSystem target)
         {
             spent = true;
+            // Partículas de choque: chispas del color del hechizo; si el orbe enemigo alcanza al mago, explosión.
+            if (ownerTeam == Team.Enemy && target != null) { HitFX.Explosion(transform.position, 0.9f, new Color(0.8f, 0.25f, 1f)); CameraShake3D.Shake(0.15f, 0.25f); }
+            else HitFX.Spark(transform.position, ownerTeam == Team.Player ? new Color(0.45f, 0.95f, 1f) : new Color(0.8f, 0.3f, 1f), target != null ? 1.3f : 0.9f);
             if (hitEffect != null) Destroy(Instantiate(hitEffect, transform.position, Quaternion.identity), 2f);
             Destroy(gameObject);
         }

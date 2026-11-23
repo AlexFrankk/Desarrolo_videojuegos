@@ -13,15 +13,15 @@ namespace MageHero
         public enum State { Idle, Chase, Attack, Return }
 
         [Header("Detección")]
-        public float detectionRange = 11f;
+        public float detectionRange = 22f;
         [Tooltip("A esta distancia siempre detecta al jugador, aunque esté de espaldas.")]
-        public float closeSenseRange = 4f;
-        [Range(10f, 360f)] public float viewAngle = 140f;
+        public float closeSenseRange = 7f;
+        [Range(10f, 360f)] public float viewAngle = 240f;
         [Tooltip("Deja de perseguir si el jugador se aleja más de esto.")]
-        public float loseRange = 18f;
+        public float loseRange = 34f;
         public bool requireLineOfSight = true;
         [Tooltip("Distancia máxima a la que se aleja de su punto de origen.")]
-        public float leashRange = 30f;
+        public float leashRange = 50f;
 
         [Header("Movimiento")]
         public float moveSpeed = 2.3f;
@@ -29,6 +29,8 @@ namespace MageHero
 
         [Header("Ataque")]
         public float attackRange = 1.7f;
+        [Tooltip("Golpe cuerpo a cuerpo. Lo desactiva EnemyCaster3D en los enemigos que atacan a distancia.")]
+        public bool meleeEnabled = true;
         public float attackDamage = 10f;
         public float attackCooldown = 1.2f;
 
@@ -105,10 +107,17 @@ namespace MageHero
                 CurrentState = State.Attack;
                 Stop();
                 Face(to);
-                if (Time.time >= nextAttack)
+                if (meleeEnabled && Time.time >= nextAttack)
                 {
                     nextAttack = Time.time + attackCooldown;
-                    if (playerHealth.TakeDamage(attackDamage)) lunge = 1f;
+                    if (playerHealth.TakeDamage(attackDamage))
+                    {
+                        lunge = 1f;
+                        // Explosión de impacto entre el enemigo y el mago + pequeño temblor de cámara.
+                        Vector3 hit = Vector3.Lerp(transform.position, player.position, 0.6f) + Vector3.up * 1f;
+                        HitFX.Explosion(hit, 0.8f);
+                        CameraShake3D.Shake(0.15f, 0.25f);
+                    }
                 }
                 return;
             }

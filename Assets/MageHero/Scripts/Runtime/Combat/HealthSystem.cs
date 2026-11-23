@@ -44,6 +44,28 @@ namespace MageHero
         public static event Action<HealthSystem> AnyDied;
 
         public float Current { get; private set; }
+
+        // ---- Escudo mágico (pociones de escudo): absorbe daño antes que la vida, durante un tiempo.
+        public float Shield { get; private set; }
+        public float ShieldMax { get; private set; }
+        public float ShieldTimeLeft => Mathf.Max(0f, shieldUntil - Time.time);
+        public event Action<HealthSystem> ShieldChanged;
+        float shieldUntil;
+
+        /// Añade escudo (se suma al que quede) y reinicia su duración.
+        public void AddShield(float amount, float duration)
+        {
+            if (amount <= 0f) return;
+            Shield = (ShieldTimeLeft > 0f ? Shield : 0f) + amount;
+            ShieldMax = Shield;
+            shieldUntil = Time.time + duration;
+            ShieldChanged?.Invoke(this);
+        }
+
+        void Update()
+        {
+            if (Shield > 0f && Time.time >= shieldUntil) { Shield = 0f; ShieldChanged?.Invoke(this); }
+        }
         public float Normalized => maxHealth > 0f ? Current / maxHealth : 0f;
         public bool IsDead { get; private set; }
         public bool IsInvulnerable => Time.time < invulnerableUntil;
@@ -59,6 +81,13 @@ namespace MageHero
         public bool TakeDamage(float amount)
         {
             if (IsDead || amount <= 0f || IsInvulnerable) return false;
+            if (Shield > 0f)
+            {
+                float absorbed = Mathf.Min(Shield, amount);
+                Shield -= absorbed; amount -= absorbed;
+                ShieldChanged?.Invoke(this);
+                if (amount <= 0.001f) { invulnerableUntil = Time.time + hitInvulnerability; return true; }   // el escudo paró todo el golpe
+            }
             Current = Mathf.Max(0f, Current - amount);
             invulnerableUntil = Time.time + hitInvulnerability;
             Notify();

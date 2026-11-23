@@ -14,6 +14,10 @@ namespace MageHero
         public bool isBoss;
         [Tooltip("Nombre que se muestra en el cartel del jefe.")]
         public string displayName = "JEFE";
+        [Tooltip("Mostrar el nombre también en enemigos normales (p. ej. Mago oscuro).")]
+        public bool showName;
+        [Tooltip("Oscurecer el color según el nivel. Desactivado en jefes con colores propios (Dragón Blanco…).")]
+        public bool applyTint = true;
 
         public int Level => level;
 
@@ -48,6 +52,18 @@ namespace MageHero
                     ai.attackDamage = LevelStats.EnemyDamage(level);
                     ai.attackCooldown = LevelStats.EnemyAttackCooldown(level);
                     ai.moveSpeed = LevelStats.EnemyMoveSpeed(level);
+                    // Persiguen desde más lejos (antes solo reaccionaban estando muy cerca).
+                    ai.detectionRange = LevelStats.EnemyDetectionRange(level);
+                    ai.loseRange = ai.detectionRange + 12f;
+                    ai.closeSenseRange = 7f;
+                    ai.viewAngle = 240f;
+                    ai.leashRange = Mathf.Max(ai.leashRange, 50f);
+                }
+                var caster = GetComponent<EnemyCaster3D>();
+                if (caster != null)
+                {
+                    caster.damage = LevelStats.RangedDamage(level);
+                    caster.cooldown = LevelStats.RangedCooldown(level);
                 }
             }
             ApplyTint();
@@ -56,6 +72,7 @@ namespace MageHero
 
         void ApplyTint()
         {
+            if (!applyTint) return;
             if (renderers == null)
                 renderers = System.Array.FindAll(GetComponentsInChildren<Renderer>(true), r => r is MeshRenderer || r is SkinnedMeshRenderer);
             mpb ??= new MaterialPropertyBlock();
@@ -73,7 +90,7 @@ namespace MageHero
         void UpdateLabel()
         {
             if (label == null) return;                       // se crea en LateUpdate, cuando ya existe la barra de vida
-            label.text = isBoss ? $"{displayName} · Nv {level}" : $"Nv {level}";
+            label.text = (isBoss || showName) ? $"{displayName} · Nv {level}" : $"Nv {level}";
             label.color = LevelStats.LevelColor(level);
         }
 
@@ -87,7 +104,7 @@ namespace MageHero
             var bar = transform.Find("HealthBar");
             if (bar == null && Time.time - startTime < 1f) return;
             Vector3 pos = bar != null ? bar.localPosition + Vector3.up * 0.32f : Vector3.up * 3f;
-            labelCanvas = UIText.WorldLabel(transform, "Nv", pos, new Vector2(isBoss ? 300f : 90f, 36f), 26,
+            labelCanvas = UIText.WorldLabel(transform, "Nv", pos, new Vector2(isBoss || showName ? 300f : 90f, 36f), 26,
                                             Color.white, new Color(0.05f, 0.06f, 0.12f, 0.85f), 0.011f / Mathf.Max(0.01f, transform.lossyScale.x));
             labelCanvas.name = "LevelLabel";
             label = labelCanvas.GetComponentInChildren<Text>();
