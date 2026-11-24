@@ -686,6 +686,9 @@ namespace MageHero
             var go = new GameObject(name, typeof(RectTransform), typeof(Image));
             go.transform.SetParent(parent, false);
             var im = go.GetComponent<Image>(); im.color = c; im.raycastTarget = false;
+            // Barra redondeada, con el mismo estilo que el resto de la interfaz.
+            im.sprite = MenuStyle.RoundedRect(Color.white, new Color(0.82f, 0.82f, 0.82f), new Color(1f, 1f, 1f, 0f), 10, 0, 48, 24);
+            im.type = Image.Type.Sliced;
             return im;
         }
 

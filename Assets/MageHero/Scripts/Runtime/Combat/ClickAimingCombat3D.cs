@@ -57,7 +57,7 @@ namespace MageHero
         {
             if (health.IsDead || Time.time < nextCast) return;
             var ui = UIManager.Instance;
-            if (ui != null && (ui.IsModalOpen || ui.InCinematic)) return;
+            if ((ui != null && (ui.IsModalOpen || ui.InCinematic)) || PauseMenu.IsOpen || GameOverScreen.IsOpen) return;
 
             var mouse = Mouse.current;
             if (mouse != null && mouse.leftButton.wasPressedThisFrame)

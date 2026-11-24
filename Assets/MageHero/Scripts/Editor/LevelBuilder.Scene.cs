@@ -306,7 +306,7 @@ namespace MageHero.Editor
             var ol = toast.gameObject.AddComponent<Outline>(); ol.effectColor = new Color(0, 0, 0, .55f); ol.effectDistance = new Vector2(2, -2);
 
             // Ayuda y botones
-            var hint = UIText.Make(hud.transform, "Hint", "WASD: caminar · Shift: correr · Espacio: saltar · Q/E o clic derecho: girar · Z/X o rueda: zoom · M: mapa · Esc: menú", 14, Color.white, TextAnchor.UpperLeft);
+            var hint = UIText.Make(hud.transform, "Hint", "WASD: caminar · Shift: correr · Espacio: saltar · Q/E o clic derecho: girar · Z/X o rueda: zoom · M: mapa · Esc: pausa", 14, Color.white, TextAnchor.UpperLeft);
             Anchor(hint.rectTransform, new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, 1), new Vector2(12, -10), new Vector2(760, 24));
             var hol = hint.gameObject.AddComponent<Outline>(); hol.effectColor = new Color(0, 0, 0, .6f); hol.effectDistance = new Vector2(1, -1);
             var mapBtn = UIButton("MapButton", hud.transform, "Mapa (M)", GoldC, Navy, 18);

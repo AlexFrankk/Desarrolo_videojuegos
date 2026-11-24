@@ -152,7 +152,7 @@ namespace MageHero
         {
             if (player == null) return;
             var ui = UIManager.Instance;
-            bool busy = ui == null || ui.IsModalOpen || ui.InCinematic || GameOverScreen.IsOpen || MapOverlay.IsOpen;
+            bool busy = ui == null || ui.IsModalOpen || ui.InCinematic || GameOverScreen.IsOpen || MapOverlay.IsOpen || PauseMenu.IsOpen || BossVictoryScreen.IsOpen;
 
             if (forceQueued && !busy && PendingChallenges > 0 && Time.time >= challengeLockedUntil)
             {
@@ -238,38 +238,37 @@ namespace MageHero
             var old = hud.transform.Find("LevelPanel"); if (old != null) Destroy(old.gameObject);
             old = hud.transform.Find("ChallengeBanner"); if (old != null) Destroy(old.gameObject);
 
-            var navy = new Color(0.114f, 0.208f, 0.341f, 1f);
-            var gold = new Color(1f, 0.718f, 0.012f, 1f);
-
-            // Panel de nivel, junto a la barra de vida (abajo a la izquierda)
-            var panel = Img("LevelPanel", hud.transform, navy);
+            // Panel de nivel, junto a la barra de vida (abajo a la izquierda), con el estilo del menú.
+            var panel = MenuStyle.HudPanel("LevelPanel", hud.transform, MenuStyle.Blue);
             var prt = panel.rectTransform; prt.anchorMin = prt.anchorMax = prt.pivot = Vector2.zero;
-            prt.anchoredPosition = new Vector2(352f, 14f); prt.sizeDelta = new Vector2(250f, 58f);
-            var line = Img("GoldLine", panel.transform, gold).rectTransform;
-            line.anchorMin = new Vector2(0, 1); line.anchorMax = Vector2.one; line.pivot = new Vector2(.5f, 1f); line.sizeDelta = new Vector2(0, 3);
+            prt.anchoredPosition = new Vector2(354f, 14f); prt.sizeDelta = new Vector2(270f, 64f);
+            var psh = panel.gameObject.AddComponent<Shadow>(); psh.effectColor = new Color(0, 0, 0, .45f); psh.effectDistance = new Vector2(0, -5);
 
-            levelText = UIText.Make(panel.transform, "Level", "NIVEL 1", 20, gold, TextAnchor.UpperLeft);
-            levelText.fontStyle = FontStyle.Bold;
-            Place(levelText.rectTransform, new Vector2(0, 1), new Vector2(12, -6), new Vector2(120, 26));
-            threatText = UIText.Make(panel.transform, "Threat", "Amenaza Nv 1", 13, Color.white, TextAnchor.UpperRight);
-            threatText.fontStyle = FontStyle.Bold;
-            Place(threatText.rectTransform, new Vector2(1, 1), new Vector2(-12, -9), new Vector2(120, 20), new Vector2(1, 1));
+            var star = MenuStyle.Image("Star", panel.transform, MenuStyle.Circle(Color.Lerp(MenuStyle.Blue, Color.white, .3f), MenuStyle.BlueDark, Color.white, 64, 4), Color.white);
+            var srt = star.rectTransform; srt.anchorMin = srt.anchorMax = srt.pivot = new Vector2(0f, .5f); srt.anchoredPosition = new Vector2(8f, 0f); srt.sizeDelta = new Vector2(46f, 46f);
+            var sl = MenuStyle.Label(star.transform, "★", 26, MenuStyle.Gold, MenuStyle.BlueDark);
+            MenuStyle.Stretch(sl.rectTransform);
 
-            var bg = Img("XpBg", panel.transform, new Color(0.06f, 0.1f, 0.18f, 1f)).rectTransform;
+            levelText = MenuStyle.Label(panel.transform, "NIVEL 1", 18, MenuStyle.Gold, new Color(0, 0, 0, .65f), true, TextAnchor.UpperLeft);
+            Place(levelText.rectTransform, new Vector2(0, 1), new Vector2(62, -5), new Vector2(120, 24));
+            threatText = MenuStyle.Label(panel.transform, "Amenaza Nv 1", 13, Color.white, new Color(0, 0, 0, .65f), true, TextAnchor.UpperRight);
+            Place(threatText.rectTransform, new Vector2(1, 1), new Vector2(-12, -8), new Vector2(120, 20), new Vector2(1, 1));
+
+            var bar = MenuStyle.Bar("XpBg", panel.transform, new Color(0.5f, 0.78f, 1f, 1f), out var fillRt);
+            var bg = bar.rectTransform;
             bg.anchorMin = new Vector2(0, 0); bg.anchorMax = new Vector2(1, 0); bg.pivot = new Vector2(.5f, 0);
-            bg.offsetMin = new Vector2(12, 10); bg.offsetMax = new Vector2(-12, 22);
-            xpFill = Img("XpFill", bg, new Color(0.5f, 0.75f, 1f, 1f));
-            var frt = xpFill.rectTransform; frt.anchorMin = Vector2.zero; frt.anchorMax = new Vector2(0f, 1f); frt.offsetMin = frt.offsetMax = Vector2.zero;
-            xpText = UIText.Make(bg, "XpText", "", 10, Color.white);
+            bg.offsetMin = new Vector2(62, 9); bg.offsetMax = new Vector2(-12, 27);
+            xpFill = fillRt.GetComponent<Image>();
+            fillRt.anchorMin = Vector2.zero; fillRt.anchorMax = new Vector2(0f, 1f);
+            xpText = MenuStyle.Label(bg, "", 11, Color.white, new Color(0, 0, 0, .8f), true);
             var xrt = xpText.rectTransform; xrt.anchorMin = Vector2.zero; xrt.anchorMax = Vector2.one; xrt.offsetMin = xrt.offsetMax = Vector2.zero;
 
-            // Aviso del reto (arriba, centrado)
-            var b = Img("ChallengeBanner", hud.transform, new Color(0.35f, 0.12f, 0.45f, 0.9f));
+            // Aviso del reto (arriba, centrado): cinta morada.
+            var b = MenuStyle.Image("ChallengeBanner", hud.transform, MenuStyle.Ribbon(MenuStyle.Purple, MenuStyle.PurpleDark), Color.white);
             var brt = b.rectTransform; brt.anchorMin = brt.anchorMax = brt.pivot = new Vector2(.5f, 1f);
-            brt.anchoredPosition = new Vector2(0f, -66f); brt.sizeDelta = new Vector2(600f, 40f);
-            bannerText = UIText.Make(b.transform, "Text", "", 18, new Color(1f, 0.9f, 0.5f));
-            bannerText.fontStyle = FontStyle.Bold;
-            var trt = bannerText.rectTransform; trt.anchorMin = Vector2.zero; trt.anchorMax = Vector2.one; trt.offsetMin = trt.offsetMax = Vector2.zero;
+            brt.anchoredPosition = new Vector2(0f, -60f); brt.sizeDelta = new Vector2(700f, 62f);
+            bannerText = MenuStyle.Label(b.transform, "", 19, MenuStyle.Cream, MenuStyle.PurpleDark, true);
+            var trt = bannerText.rectTransform; trt.anchorMin = Vector2.zero; trt.anchorMax = Vector2.one; trt.offsetMin = new Vector2(40, 4); trt.offsetMax = new Vector2(-40, 0);
             banner = b.gameObject;
             banner.SetActive(false);
         }

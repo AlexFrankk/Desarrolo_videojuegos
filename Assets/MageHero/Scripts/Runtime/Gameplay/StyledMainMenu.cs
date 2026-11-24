@@ -19,6 +19,8 @@ namespace MageHero
     public class StyledMainMenu : MonoBehaviour
     {
         public const string ThumbFolder = "MenuThumbs";
+        /// Si es true, el menú se abre directamente en la lista de escenarios (lo usa "Cambiar de escenario" de la pausa).
+        public static bool OpenLevelsOnStart;
 
         MenuController menu;
         GameObject mainPage, levelsPage, controlsPanel, loadingPanel;
@@ -34,10 +36,12 @@ namespace MageHero
             if (!MenuController.IsMainMenuScene) { Destroy(this); return; }
             menu = GetComponent<MenuController>();
             Time.timeScale = 1f;
+            AudioListener.pause = false;
             for (int i = transform.childCount - 1; i >= 0; i--) Destroy(transform.GetChild(i).gameObject);   // menú antiguo
             EnsureClickable();
             Build();
-            ShowMain();
+            if (OpenLevelsOnStart) { OpenLevelsOnStart = false; ShowLevels(); }
+            else ShowMain();
         }
 
         /// Sin EventSystem o sin GraphicRaycaster los botones no reciben clics.
@@ -298,7 +302,7 @@ namespace MageHero
             {
                 { "W A S D / Flechas", "Caminar" }, { "Shift", "Correr" }, { "Espacio", "Saltar" },
                 { "Clic izquierdo / Enter", "Lanzar hechizo" }, { "Clic derecho + arrastrar", "Girar la cámara" },
-                { "Q / E · Z / X · Rueda", "Girar · Zoom" }, { "F · H", "Interactuar · Ver pista" }, { "M · Esc", "Mapa · Menú" },
+                { "Q / E · Z / X · Rueda", "Girar · Zoom" }, { "F · H", "Interactuar · Ver pista" }, { "M · Esc", "Mapa · Pausa" },
             };
             for (int i = 0; i < rows.GetLength(0); i++)
             {

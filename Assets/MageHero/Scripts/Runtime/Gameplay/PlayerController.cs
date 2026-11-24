@@ -79,7 +79,7 @@ namespace MageHero
 
             // No saltar con un panel abierto (quiz, pista) o durante la cinemática del puente.
             var ui = UIManager.Instance;
-            bool uiBlocks = (ui != null && (ui.IsModalOpen || ui.InCinematic)) || GameOverScreen.IsOpen;
+            bool uiBlocks = (ui != null && (ui.IsModalOpen || ui.InCinematic)) || GameOverScreen.IsOpen || PauseMenu.IsOpen;
             if (jumpAction.WasPressedThisFrame() && !uiBlocks) lastJumpPressTime = Time.time;
 
             bool onSteepSlope = sensor != null && sensor.IsGrounded && sensor.SlopeAngle > cc.slopeLimit;

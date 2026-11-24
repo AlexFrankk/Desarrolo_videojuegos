@@ -1132,7 +1132,7 @@ namespace MageHero.Editor
             var toast = UIText.Make(toastRt, "Text", "", 48, Color.white); toast.fontStyle = FontStyle.Bold; Fill(toast.rectTransform, 0, 0, 0, 0);
             var ol = toast.gameObject.AddComponent<Outline>(); ol.effectColor = new Color(0, 0, 0, .55f); ol.effectDistance = new Vector2(2, -2);
 
-            var hint = UIText.Make(hud.transform, "Hint", "WASD: caminar · Shift: correr · Espacio: saltar · Clic/Enter: hechizo · Q/E: girar · Esc: menú · ¡Evita la lava!", 14, Color.white, TextAnchor.UpperLeft);
+            var hint = UIText.Make(hud.transform, "Hint", "WASD: caminar · Shift: correr · Espacio: saltar · Clic/Enter: hechizo · Q/E: girar · Esc: pausa · ¡Evita la lava!", 14, Color.white, TextAnchor.UpperLeft);
             Anchor(hint.rectTransform, new Vector2(0, 1), new Vector2(0, 1), new Vector2(12, -10), new Vector2(900, 24));
             hint.rectTransform.pivot = new Vector2(0, 1);
             var hol = hint.gameObject.AddComponent<Outline>(); hol.effectColor = new Color(0, 0, 0, .6f); hol.effectDistance = new Vector2(1, -1);
