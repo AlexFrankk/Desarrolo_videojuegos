@@ -18,7 +18,7 @@ La rama `main` ya contiene el proyecto completo (Assets, escenas, scripts y sett
 Alternativa: crea un proyecto 3D (URP) y importa `MageHero.unitypackage` (Assets > Import Package > Custom Package). Requiere Input System y uGUI.
 
 ## Controles
-WASD caminar · Shift correr · Espacio saltar · Clic/Enter hechizo · Q/E o arrastrar con clic derecho girar cámara · Z/X o rueda zoom · M mapa · Esc menú · 1/2/3 elegir nivel en el menú.
+WASD caminar · Shift correr · Espacio saltar · Clic/Enter hechizo · Q/E o arrastrar con clic derecho girar cámara · Z/X o rueda zoom · M mapa · Esc pausa (continuar, reiniciar, mapa, escenarios, menú) · 1/2/3 elegir nivel en el menú.
 
 ## Combate y Game Over
 En los 3 niveles los enemigos numéricos persiguen y atacan al mago (`CombatBootstrap` lo prepara al cargar cada nivel).

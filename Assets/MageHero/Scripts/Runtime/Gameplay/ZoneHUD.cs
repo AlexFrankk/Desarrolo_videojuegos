@@ -5,7 +5,7 @@ using UnityEngine.UI;
 
 namespace MageHero
 {
-    /// Cuadro de nivel/zona (arriba a la derecha) y aviso central al entrar a una zona nueva. Esc = volver al menú.
+    /// Cuadro de nivel/zona (arriba a la derecha) y aviso central al entrar a una zona nueva. (Esc = pausa, ver PauseMenu.)
     public class ZoneHUD : MonoBehaviour
     {
         public LevelInfo info;
@@ -24,7 +24,7 @@ namespace MageHero
 
         void Update()
         {
-            if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame && !UIManager.BlocksEscape && !MapOverlay.BlocksEscape) SceneManager.LoadScene(menuScene);
+            // Esc ya no vuelve directo al menú: abre el menú de pausa (PauseMenu).
             if (info == null || player == null) return;
 
             string best = info.levelName; float bd = detectRadius;

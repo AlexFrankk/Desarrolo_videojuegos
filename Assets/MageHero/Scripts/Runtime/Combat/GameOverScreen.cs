@@ -134,61 +134,47 @@ namespace MageHero
             canvasGo.transform.SetParent(transform, false);
             var canvas = canvasGo.GetComponent<Canvas>();
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-            canvas.sortingOrder = 500;                                      // por encima del HUD y del mapa
+            canvas.sortingOrder = 500;                                      // por encima del HUD, el mapa y la pausa
             var scaler = canvasGo.GetComponent<CanvasScaler>();
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
             scaler.referenceResolution = new Vector2(1280, 720);
             scaler.matchWidthOrHeight = 0.5f;
 
-            // Fondo oscuro que bloquea los clics al juego.
-            var bg = Img("Overlay", canvasGo.transform, new Color(0f, 0f, 0f, 0.78f));
-            bg.raycastTarget = true;
-            Stretch(bg.rectTransform);
-            root = bg.gameObject;
-
-            var box = Img("Box", root.transform, Navy);
-            box.rectTransform.sizeDelta = new Vector2(640, 440);
-
-            var title = UIText.Make(box.transform, "Title", "GAME OVER", 64, Red);
-            title.fontStyle = FontStyle.Bold;
-            Place(title.rectTransform, 0, 160, 600, 80);
+            // Ventana con el mismo estilo del menú: cinta roja con el título, panel redondeado.
+            var box = MenuStyle.Window(canvasGo.transform, "GameOver", "GAME OVER", new Vector2(660, 470), MenuStyle.Red, null, out root);
+            root.GetComponent<Image>().color = new Color(0f, 0f, 0f, 0.72f);
 
             // --- Página 1: elegir
-            choicePage = new GameObject("Choice", typeof(RectTransform));
-            choicePage.transform.SetParent(box.transform, false);
-            Stretch((RectTransform)choicePage.transform);
-            var lost = UIText.Make(choicePage.transform, "Lost", "¡Has perdido! Tu vida llegó a cero.", 28, Color.white);
-            Place(lost.rectTransform, 0, 85, 600, 40);
-            var offer = UIText.Make(choicePage.transform, "Offer",
-                "Resuelve un problema matemático para revivir.\nSi fallas, volverás al menú de inicio.", 22, Gold);
-            Place(offer.rectTransform, 0, 25, 600, 70);
-            var solve = MakeButton("SolveButton", choicePage.transform, "Resolver problema", Green, Color.black, 28);
-            Place((RectTransform)solve.transform, 0, -70, 380, 70);
-            solve.onClick.AddListener(OpenQuiz);
-            var menu = MakeButton("MenuButton", choicePage.transform, "Volver al menú", ButtonBg, Color.white, 22);
-            Place((RectTransform)menu.transform, 0, -160, 280, 54);
-            menu.onClick.AddListener(GoToMenu);
+            choicePage = MenuStyle.Rect("Choice", box).gameObject;
+            MenuStyle.Stretch((RectTransform)choicePage.transform);
+            var lost = MenuStyle.Label(choicePage.transform, "¡Has perdido! Tu vida llegó a cero.", 28, Color.white, new Color(0, 0, 0, .6f));
+            MenuStyle.Place(lost.rectTransform, new Vector2(.5f, 1f), new Vector2(0, -110), new Vector2(620, 40));
+            var offer = MenuStyle.Label(choicePage.transform,
+                "Resuelve un problema matemático para revivir.\nSi fallas, volverás al menú de inicio.", 21, MenuStyle.Cream, new Color(0, 0, 0, .6f), false);
+            MenuStyle.Place(offer.rectTransform, new Vector2(.5f, 1f), new Vector2(0, -170), new Vector2(620, 60));
+            var solve = MenuStyle.GlossyButton("SolveButton", choicePage.transform, "Resolver problema", MenuStyle.Green, 32, OpenQuiz);
+            MenuStyle.Place((RectTransform)solve.transform, new Vector2(.5f, 0f), new Vector2(0, 130), new Vector2(400, 80));
+            var menu = MenuStyle.GlossyButton("MenuButton", choicePage.transform, "Volver al menú", MenuStyle.Blue, 24, GoToMenu);
+            MenuStyle.Place((RectTransform)menu.transform, new Vector2(.5f, 0f), new Vector2(0, 46), new Vector2(300, 60));
 
             // --- Página 2: problema
-            quizPage = new GameObject("Quiz", typeof(RectTransform));
-            quizPage.transform.SetParent(box.transform, false);
-            Stretch((RectTransform)quizPage.transform);
-            var eqBg = Img("EquationBg", quizPage.transform, new Color(0f, 0f, 0f, 0.35f));
-            Place(eqBg.rectTransform, 0, 70, 560, 90);
-            equationText = UIText.Make(eqBg.transform, "Equation", "", 46, Color.white);
-            equationText.fontStyle = FontStyle.Bold;
-            Stretch(equationText.rectTransform);
+            quizPage = MenuStyle.Rect("Quiz", box).gameObject;
+            MenuStyle.Stretch((RectTransform)quizPage.transform);
+            var eqBg = MenuStyle.Image("EquationBg", quizPage.transform, MenuStyle.RoundedRect(new Color(0.04f, 0.07f, 0.12f, 1f), new Color(0.07f, 0.1f, 0.16f, 1f), MenuStyle.Gold, 20, 3), Color.white);
+            MenuStyle.Place(eqBg.rectTransform, new Vector2(.5f, 1f), new Vector2(0, -130), new Vector2(560, 92));
+            equationText = MenuStyle.Label(eqBg.transform, "", 48, Color.white, new Color(0, 0, 0, .7f));
+            MenuStyle.Stretch(equationText.rectTransform);
             for (int i = 0; i < 4; i++)
             {
                 int idx = i;
-                var b = MakeButton("Answer" + (i + 1), quizPage.transform, "", AnswerBg, Color.black, 30);
-                Place((RectTransform)b.transform, (i % 2 == 0 ? -140 : 140), (i < 2 ? -40 : -115), 260, 60);
-                b.onClick.AddListener(() => Answer(idx));
+                var b = MenuStyle.TintButton("Answer" + (i + 1), quizPage.transform, "", AnswerBg, 30, () => Answer(idx), new Color(0.114f, 0.208f, 0.341f));
+                MenuStyle.Place((RectTransform)b.transform, new Vector2(.5f, 1f), new Vector2(i % 2 == 0 ? -145 : 145, i < 2 ? -236 : -310), new Vector2(270, 62));
                 answerButtons[i] = b;
                 answerLabels[i] = b.GetComponentInChildren<Text>();
             }
-            feedbackText = UIText.Make(quizPage.transform, "Feedback", "", 20, Color.white);
-            Place(feedbackText.rectTransform, 0, -180, 600, 40);
+            feedbackText = MenuStyle.Label(quizPage.transform, "", 19, Color.white, new Color(0, 0, 0, .6f), false);
+            feedbackText.horizontalOverflow = HorizontalWrapMode.Wrap;
+            MenuStyle.Place(feedbackText.rectTransform, new Vector2(.5f, 0f), new Vector2(0, 40), new Vector2(610, 50));
         }
 
         static Image Img(string name, Transform parent, Color c)

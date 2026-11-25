@@ -81,8 +81,9 @@ namespace MageHero
             if (canvas == null) { var hud = GameObject.Find("HUD"); if (hud != null) canvas = hud.GetComponent<Canvas>(); }
             if (canvas != null)
             {
-                if (playerHealthSlider == null) BuildHud(this, canvas.transform);
-                if (quizPanel == null) BuildPuzzleUI(this, canvas.transform);
+                // Siempre se reconstruye con el estilo del menú (sustituye la versión antigua guardada en la escena).
+                BuildHud(this, canvas.transform);
+                BuildPuzzleUI(this, canvas.transform);
             }
             WireButtons();
             if (quizPanel != null) quizPanel.SetActive(false);
@@ -143,7 +144,7 @@ namespace MageHero
 
             // --- Teclado
             var kb = Keyboard.current;
-            if (kb == null) return;
+            if (kb == null || PauseMenu.IsOpen || GameOverScreen.IsOpen) return;
             if (kb.escapeKey.wasPressedThisFrame && IsModalOpen)
             {
                 escFrame = Time.frameCount;
@@ -341,55 +342,58 @@ namespace MageHero
         }
 
         // ================================================================== Construcción: HUD de combate
+        /// Barra de vida (abajo a la izquierda), destello de daño y mensajes centrales, con el estilo del menú.
         public static void BuildHud(UIManager ui, Transform canvas)
         {
+            foreach (var n in new[] { "PlayerHealthPanel", "DamageFlash", "CombatMessage" }) RemoveOld(canvas, n);
+
             var flashImg = Img("DamageFlash", canvas, new Color(0.85f, 0.05f, 0.1f, 0f));
             Stretch(flashImg.rectTransform);
             flashImg.transform.SetAsFirstSibling();
 
-            var panel = Img("PlayerHealthPanel", canvas, Navy);
-            Anchor(panel.rectTransform, Vector2.zero, new Vector2(14f, 14f), new Vector2(330f, 58f));
-            var line = Img("GoldLine", panel.transform, Gold);
-            var lrt = line.rectTransform; lrt.anchorMin = new Vector2(0, 1); lrt.anchorMax = Vector2.one; lrt.pivot = new Vector2(.5f, 1f); lrt.sizeDelta = new Vector2(0, 3);
-            var title = UIText.Make(panel.transform, "Title", "VIDA", 13, new Color(.6f, .8f, 1f, 1f), TextAnchor.UpperLeft);
-            Place(title.rectTransform, new Vector2(12, -8), new Vector2(120, 18));
-            var value = UIText.Make(panel.transform, "Value", "100 / 100", 14, Color.white, TextAnchor.UpperRight);
-            value.fontStyle = FontStyle.Bold;
-            var vrt = value.rectTransform; vrt.anchorMin = vrt.anchorMax = vrt.pivot = new Vector2(1, 1); vrt.anchoredPosition = new Vector2(-12, -8); vrt.sizeDelta = new Vector2(140, 18);
+            var panel = MenuStyle.HudPanel("PlayerHealthPanel", canvas, MenuStyle.Red);
+            Anchor(panel.rectTransform, Vector2.zero, new Vector2(14f, 14f), new Vector2(330f, 64f));
+            var psh = panel.gameObject.AddComponent<Shadow>(); psh.effectColor = new Color(0, 0, 0, .45f); psh.effectDistance = new Vector2(0, -5);
+
+            var heart = MenuStyle.Image("Heart", panel.transform, MenuStyle.Circle(new Color(1f, .45f, .45f), MenuStyle.RedDark, Color.white, 64, 4), Color.white);
+            var hrt0 = heart.rectTransform; hrt0.anchorMin = hrt0.anchorMax = hrt0.pivot = new Vector2(0f, .5f); hrt0.anchoredPosition = new Vector2(8f, 0f); hrt0.sizeDelta = new Vector2(46f, 46f);
+            var hl = MenuStyle.Label(heart.transform, "♥", 26, Color.white, MenuStyle.RedDark);
+            MenuStyle.Stretch(hl.rectTransform);
+
+            var title = MenuStyle.Label(panel.transform, "VIDA", 15, MenuStyle.Cream, new Color(0, 0, 0, .6f), true, TextAnchor.UpperLeft);
+            Place(title.rectTransform, new Vector2(62, -7), new Vector2(120, 20));
+            var value = MenuStyle.Label(panel.transform, "100 / 100", 15, Color.white, new Color(0, 0, 0, .6f), true, TextAnchor.UpperRight);
+            var vrt = value.rectTransform; vrt.anchorMin = vrt.anchorMax = vrt.pivot = new Vector2(1, 1); vrt.anchoredPosition = new Vector2(-12, -7); vrt.sizeDelta = new Vector2(140, 20);
 
             var sgo = new GameObject("PlayerHealthSlider", typeof(RectTransform), typeof(Slider));
             sgo.transform.SetParent(panel.transform, false);
             var srt = (RectTransform)sgo.transform;
             srt.anchorMin = new Vector2(0, 0); srt.anchorMax = new Vector2(1, 0); srt.pivot = new Vector2(.5f, 0);
-            srt.offsetMin = new Vector2(12, 10); srt.offsetMax = new Vector2(-12, 28);
-            Stretch(Img("Background", sgo.transform, new Color(0.25f, 0.05f, 0.08f, 1f)).rectTransform);
-            var area = new GameObject("Fill Area", typeof(RectTransform));
-            area.transform.SetParent(sgo.transform, false);
-            Stretch((RectTransform)area.transform);
-            var fill = Img("Fill", area.transform, new Color(0.36f, 0.85f, 0.42f));
-            Stretch(fill.rectTransform);
+            srt.offsetMin = new Vector2(62, 9); srt.offsetMax = new Vector2(-12, 31);
+            var barBg = MenuStyle.Bar("Background", sgo.transform, new Color(0.36f, 0.85f, 0.42f), out var fillRt);
+            Stretch(barBg.rectTransform);
+            var fill = fillRt.GetComponent<Image>();
             var slider = sgo.GetComponent<Slider>();
-            slider.fillRect = fill.rectTransform; slider.handleRect = null; slider.targetGraphic = null;
+            slider.fillRect = fillRt; slider.handleRect = null; slider.targetGraphic = null;
             slider.direction = Slider.Direction.LeftToRight; slider.minValue = 0f; slider.maxValue = 1f; slider.value = 1f;
             slider.interactable = false; slider.transition = Selectable.Transition.None;
             var nav = slider.navigation; nav.mode = Navigation.Mode.None; slider.navigation = nav;
 
-            var msg = UIText.Make(canvas, "CombatMessage", "", 30, Color.white);
-            msg.fontStyle = FontStyle.Bold;
+            var msg = MenuStyle.Label(canvas, "", 34, Color.white, MenuStyle.OrangeDark);
+            msg.name = "CombatMessage";
+            msg.GetComponent<Outline>().effectDistance = new Vector2(2.5f, -2.5f);
             var mrt = msg.rectTransform; mrt.anchorMin = mrt.anchorMax = new Vector2(.5f, .6f); mrt.pivot = new Vector2(.5f, .5f); mrt.sizeDelta = new Vector2(1000, 60);
-            AddOutline(msg, 2f);
 
             ui.playerHealthSlider = slider; ui.playerHealthFill = fill; ui.playerHealthText = value;
             ui.damageFlash = flashImg; ui.messageText = msg;
         }
 
         // ================================================================== Construcción: UI del puzzle
-        /// Crea en el Canvas (Screen Space - Overlay) los paneles del quiz y la pista, el aviso de interacción,
+        /// Crea en el Canvas los paneles del quiz y la pista (ventanas con cinta y botón X), el aviso de interacción,
         /// el objetivo, la insignia del pergamino y las franjas de cinemática. Todo empieza oculto.
         public static void BuildPuzzleUI(UIManager ui, Transform canvas)
         {
-            foreach (var n in new[] { "Letterbox", "Objective", "InteractPrompt", "ClueBadge", "QuizPanel", "CluePanel" })
-            { var old = canvas.Find(n); if (old != null) DestroyImmediate(old.gameObject); }
+            foreach (var n in new[] { "Letterbox", "Objective", "InteractPrompt", "ClueBadge", "QuizPanel", "CluePanel" }) RemoveOld(canvas, n);
 
             // Franjas de cinemática
             var lb = new GameObject("Letterbox", typeof(RectTransform)).GetComponent<RectTransform>();
@@ -398,88 +402,86 @@ namespace MageHero
             top.anchorMin = new Vector2(0, 1); top.anchorMax = Vector2.one; top.pivot = new Vector2(.5f, 1f); top.sizeDelta = Vector2.zero;
             var bottom = Img("Bottom", lb, Color.black).rectTransform;
             bottom.anchorMin = Vector2.zero; bottom.anchorMax = new Vector2(1, 0); bottom.pivot = new Vector2(.5f, 0f); bottom.sizeDelta = Vector2.zero;
-            var sub = UIText.Make(lb, "Subtitle", "", 24, Color.white);
-            sub.fontStyle = FontStyle.Bold;
+            var sub = MenuStyle.Label(lb, "", 26, Color.white, new Color(0, 0, 0, .8f));
+            sub.name = "Subtitle";
             var subrt = sub.rectTransform; subrt.anchorMin = subrt.anchorMax = new Vector2(.5f, 0f); subrt.pivot = new Vector2(.5f, 0f); subrt.anchoredPosition = new Vector2(0, 40); subrt.sizeDelta = new Vector2(1200, 40);
-            AddOutline(sub, 2f);
 
             // Objetivo (debajo de la línea de ayuda, arriba a la izquierda)
-            var obj = UIText.Make(canvas, "Objective", "", 16, new Color(1f, 0.88f, 0.45f), TextAnchor.UpperLeft);
-            obj.fontStyle = FontStyle.Bold;
-            Place(obj.rectTransform, new Vector2(12, -36), new Vector2(1000, 24));
-            AddOutline(obj, 1f);
+            var obj = MenuStyle.Label(canvas, "", 17, MenuStyle.Gold, new Color(0, 0, 0, .7f), true, TextAnchor.UpperLeft);
+            obj.name = "Objective";
+            Place(obj.rectTransform, new Vector2(14, -42), new Vector2(1000, 24));
 
             // Aviso de interacción (abajo al centro)
-            var prompt = Img("InteractPrompt", canvas, new Color(Navy.r, Navy.g, Navy.b, 0.92f));
-            var prt = prompt.rectTransform; prt.anchorMin = prt.anchorMax = prt.pivot = new Vector2(.5f, 0f); prt.anchoredPosition = new Vector2(0, 86); prt.sizeDelta = new Vector2(560, 46);
-            var pline = Img("GoldLine", prompt.transform, Gold).rectTransform;
-            pline.anchorMin = Vector2.zero; pline.anchorMax = new Vector2(1, 0); pline.pivot = new Vector2(.5f, 0); pline.sizeDelta = new Vector2(0, 3);
-            var ptext = UIText.Make(prompt.transform, "Text", "", 20, Color.white);
-            ptext.fontStyle = FontStyle.Bold; Stretch(ptext.rectTransform);
+            var prompt = MenuStyle.HudPanel("InteractPrompt", canvas, MenuStyle.Gold);
+            var prt = prompt.rectTransform; prt.anchorMin = prt.anchorMax = prt.pivot = new Vector2(.5f, 0f); prt.anchoredPosition = new Vector2(0, 90); prt.sizeDelta = new Vector2(580, 50);
+            var ptext = MenuStyle.Label(prompt.transform, "", 21, MenuStyle.Cream, new Color(0, 0, 0, .6f));
+            Stretch(ptext.rectTransform);
 
             // Insignia del pergamino (sobre la barra de vida)
-            var badge = Img("ClueBadge", canvas, new Color(0.95f, 0.88f, 0.68f, 0.95f));
-            Anchor(badge.rectTransform, Vector2.zero, new Vector2(14f, 80f), new Vector2(330f, 30f));
-            var btext = UIText.Make(badge.transform, "Text", "", 15, new Color(0.35f, 0.2f, 0.08f));
-            btext.fontStyle = FontStyle.Bold; Stretch(btext.rectTransform);
+            var badge = MenuStyle.HudPanel("ClueBadge", canvas, MenuStyle.Gold);
+            Anchor(badge.rectTransform, Vector2.zero, new Vector2(14f, 86f), new Vector2(330f, 34f));
+            var btext = MenuStyle.Label(badge.transform, "", 15, MenuStyle.Cream, new Color(0, 0, 0, .6f));
+            Stretch(btext.rectTransform);
 
-            // ---------- Panel del quiz
-            var quiz = Img("QuizPanel", canvas, new Color(0f, 0f, 0f, 0.6f));
-            Stretch(quiz.rectTransform); quiz.raycastTarget = true;               // bloquea clics al mundo
-            var border = Img("Border", quiz.transform, Gold);
-            Center(border.rectTransform, new Vector2(688, 488));
-            var box = Img("Box", quiz.transform, Navy);
-            Center(box.rectTransform, new Vector2(680, 480));
-            var qTitle = UIText.Make(box.transform, "Title", "", 30, Gold); qTitle.fontStyle = FontStyle.Bold;
-            Top(qTitle.rectTransform, -18, new Vector2(640, 40));
-            var qSub = UIText.Make(box.transform, "Subtitle", "", 16, new Color(.65f, .82f, 1f));
-            Top(qSub.rectTransform, -60, new Vector2(640, 24));
-            var eqBg = Img("EquationBox", box.transform, new Color(0.06f, 0.12f, 0.22f, 1f));
-            Top(eqBg.rectTransform, -94, new Vector2(600, 92));
-            var qQ = UIText.Make(eqBg.transform, "Equation", "", 46, Color.white); qQ.fontStyle = FontStyle.Bold;
+            // ---------- Ventana del quiz (cinta con el título, botón X para salir)
+            var qBox = MenuStyle.Window(canvas, "QuizPanel", "Reto", new Vector2(700, 540), MenuStyle.Orange, () => ui.CloseQuiz(true), out var quiz);
+            var qTitle = qBox.Find("Ribbon").GetComponentInChildren<Text>();
+            var qSub = MenuStyle.Label(qBox, "", 17, MenuStyle.Cream, new Color(0, 0, 0, .6f), false);
+            qSub.horizontalOverflow = HorizontalWrapMode.Wrap;
+            Top(qSub.rectTransform, -76, new Vector2(620, 46));
+            var eqBg = MenuStyle.Image("EquationBox", qBox, MenuStyle.RoundedRect(new Color(0.04f, 0.07f, 0.12f, 1f), new Color(0.07f, 0.1f, 0.16f, 1f), MenuStyle.Gold, 20, 3), Color.white);
+            Top(eqBg.rectTransform, -126, new Vector2(600, 96));
+            var qQ = MenuStyle.Label(eqBg.transform, "", 50, Color.white, new Color(0, 0, 0, .7f));
             Stretch(qQ.rectTransform);
             var buttons = new Button[4];
             for (int i = 0; i < 4; i++)
             {
-                var b = MakeButton("Answer_" + (i + 1), box.transform, "", AnswerBg, Navy, 26);
+                var b = MenuStyle.TintButton("Answer_" + (i + 1), qBox, "", AnswerBg, 28, null, Navy);
                 var rt = (RectTransform)b.transform;
                 rt.anchorMin = rt.anchorMax = rt.pivot = new Vector2(.5f, 1f);
-                rt.anchoredPosition = new Vector2(i % 2 == 0 ? -152 : 152, -206 - (i / 2) * 76);
+                rt.anchoredPosition = new Vector2(i % 2 == 0 ? -152 : 152, -240 - (i / 2) * 78);
                 rt.sizeDelta = new Vector2(290, 64);
                 buttons[i] = b;
             }
-            var qFb = UIText.Make(box.transform, "Feedback", "", 17, Color.white);
-            Top(qFb.rectTransform, -366, new Vector2(640, 40));
+            var qFb = MenuStyle.Label(qBox, "", 18, Color.white, new Color(0, 0, 0, .6f), false);
+            Top(qFb.rectTransform, -398, new Vector2(640, 44));
             qFb.horizontalOverflow = HorizontalWrapMode.Wrap;
-            var hintB = MakeButton("HintButton", box.transform, "Ver pista (H)", new Color(0.95f, 0.88f, 0.68f), new Color(0.35f, 0.2f, 0.08f), 18);
-            var hrt = (RectTransform)hintB.transform; hrt.anchorMin = hrt.anchorMax = hrt.pivot = new Vector2(.5f, 0f); hrt.anchoredPosition = new Vector2(-130, 18); hrt.sizeDelta = new Vector2(250, 46);
-            var exitB = MakeButton("ExitButton", box.transform, "Salir (Esc)", new Color(0.75f, 0.25f, 0.3f), Color.white, 18);
-            var ert = (RectTransform)exitB.transform; ert.anchorMin = ert.anchorMax = ert.pivot = new Vector2(.5f, 0f); ert.anchoredPosition = new Vector2(150, 18); ert.sizeDelta = new Vector2(200, 46);
-            quiz.gameObject.SetActive(false);
+            var hintB = MenuStyle.TintButton("HintButton", qBox, "Ver pista (H)", MenuStyle.Gold, 19, null, new Color(0.3f, 0.17f, 0.05f));
+            var hrt = (RectTransform)hintB.transform; hrt.anchorMin = hrt.anchorMax = hrt.pivot = new Vector2(.5f, 0f); hrt.anchoredPosition = new Vector2(-135, 22); hrt.sizeDelta = new Vector2(270, 52);
+            var exitB = MenuStyle.TintButton("ExitButton", qBox, "Salir (Esc)", MenuStyle.Red, 19, null);
+            var ert = (RectTransform)exitB.transform; ert.anchorMin = ert.anchorMax = ert.pivot = new Vector2(.5f, 0f); ert.anchoredPosition = new Vector2(150, 22); ert.sizeDelta = new Vector2(220, 52);
+            quiz.SetActive(false);
 
-            // ---------- Panel del pergamino (pista)
-            var clue = Img("CluePanel", canvas, new Color(0f, 0f, 0f, 0.6f));
-            Stretch(clue.rectTransform); clue.raycastTarget = true;
-            var cBorder = Img("Border", clue.transform, new Color(0.45f, 0.28f, 0.1f));
-            Center(cBorder.rectTransform, new Vector2(768, 568));
-            var paper = Img("Paper", clue.transform, new Color(0.96f, 0.9f, 0.72f));
-            Center(paper.rectTransform, new Vector2(760, 560));
-            var cTitle = UIText.Make(paper.transform, "Title", "", 28, new Color(0.45f, 0.22f, 0.05f)); cTitle.fontStyle = FontStyle.Bold;
-            Top(cTitle.rectTransform, -16, new Vector2(700, 38));
-            var cBody = UIText.Make(paper.transform, "Body", "", 16, new Color(0.22f, 0.13f, 0.05f), TextAnchor.UpperLeft);
+            // ---------- Ventana del pergamino (pista)
+            var cBox = MenuStyle.Window(canvas, "CluePanel", "Pergamino", new Vector2(780, 580), MenuStyle.Gold, ui.CloseClue, out var clue);
+            var cTitle = cBox.Find("Ribbon").GetComponentInChildren<Text>();
+            var paper = MenuStyle.Image("Paper", cBox, MenuStyle.RoundedRect(new Color(0.98f, 0.93f, 0.76f), new Color(0.93f, 0.85f, 0.64f), new Color(0.55f, 0.36f, 0.14f), 18, 4), Color.white);
+            var pprt = paper.rectTransform; pprt.anchorMin = Vector2.zero; pprt.anchorMax = Vector2.one; pprt.offsetMin = new Vector2(30, 92); pprt.offsetMax = new Vector2(-30, -74);
+            var cBody = UIText.Make(paper.transform, "Body", "", 17, new Color(0.22f, 0.13f, 0.05f), TextAnchor.UpperLeft);
             cBody.horizontalOverflow = HorizontalWrapMode.Wrap; cBody.verticalOverflow = VerticalWrapMode.Truncate; cBody.lineSpacing = 1.1f;
-            var cbrt = cBody.rectTransform; cbrt.anchorMin = Vector2.zero; cbrt.anchorMax = Vector2.one; cbrt.offsetMin = new Vector2(34, 74); cbrt.offsetMax = new Vector2(-34, -62);
-            var closeB = MakeButton("CloseButton", paper.transform, "Cerrar (H / Esc)", new Color(0.45f, 0.28f, 0.1f), Color.white, 18);
-            var crt = (RectTransform)closeB.transform; crt.anchorMin = crt.anchorMax = crt.pivot = new Vector2(.5f, 0f); crt.anchoredPosition = new Vector2(0, 16); crt.sizeDelta = new Vector2(240, 46);
-            clue.gameObject.SetActive(false);
+            var cbrt = cBody.rectTransform; cbrt.anchorMin = Vector2.zero; cbrt.anchorMax = Vector2.one; cbrt.offsetMin = new Vector2(22, 16); cbrt.offsetMax = new Vector2(-22, -16);
+            var closeB = MenuStyle.GlossyButton("CloseButton", cBox, "Cerrar (H / Esc)", MenuStyle.Green, 22, null);
+            var crt = (RectTransform)closeB.transform; crt.anchorMin = crt.anchorMax = crt.pivot = new Vector2(.5f, 0f); crt.anchoredPosition = new Vector2(0, 20); crt.sizeDelta = new Vector2(260, 56);
+            clue.SetActive(false);
 
             ui.letterboxTop = top; ui.letterboxBottom = bottom; ui.subtitleText = sub;
             ui.objectiveText = obj;
             ui.promptRoot = prompt.gameObject; ui.promptText = ptext; prompt.gameObject.SetActive(false);
             ui.clueBadge = badge.gameObject; badge.gameObject.SetActive(false);
-            ui.quizPanel = quiz.gameObject; ui.quizTitle = qTitle; ui.quizSubtitle = qSub; ui.quizQuestion = qQ; ui.quizFeedback = qFb;
+            ui.quizPanel = quiz; ui.quizTitle = qTitle; ui.quizSubtitle = qSub; ui.quizQuestion = qQ; ui.quizFeedback = qFb;
             ui.answerButtons = buttons; ui.quizHintButton = hintB; ui.quizExitButton = exitB;
-            ui.cluePanel = clue.gameObject; ui.clueTitle = cTitle; ui.clueBody = cBody; ui.clueCloseButton = closeB;
+            ui.cluePanel = clue; ui.clueTitle = cTitle; ui.clueBody = cBody; ui.clueCloseButton = closeB;
+        }
+
+        static void RemoveOld(Transform canvas, string name)
+        {
+            for (int i = canvas.childCount - 1; i >= 0; i--)
+            {
+                var c = canvas.GetChild(i);
+                if (c.name != name) continue;
+                c.gameObject.SetActive(false);
+                if (Application.isPlaying) Destroy(c.gameObject); else DestroyImmediate(c.gameObject);
+            }
         }
 
         // ================================================================== Utilidades de UI

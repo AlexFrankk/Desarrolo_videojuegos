@@ -60,7 +60,7 @@ namespace MageHero
         void Update()
         {
             var kb = Keyboard.current;
-            if (kb != null && panel != null)
+            if (kb != null && panel != null && !PauseMenu.IsOpen && !GameOverScreen.IsOpen)
             {
                 if (kb.mKey.wasPressedThisFrame) Toggle();
                 else if (panel.activeSelf && kb.escapeKey.wasPressedThisFrame) { SetOpen(false); closedFrame = Time.frameCount; }
@@ -170,7 +170,7 @@ namespace MageHero
             float cardW = margin + frameW + gap + sideW + margin, cardH = frameW + 92f;
 
             // Tarjeta contenedora
-            var cardImg = Img("Card", panel.transform, NavyDeep, roundSprite);
+            var cardImg = Img("Card", panel.transform, Color.white, MenuStyle.PanelSprite(accent));   // mismo panel que el menú
             card = cardImg.rectTransform;
             Place(card, new Vector2(.5f, .5f), Vector2.zero, new Vector2(cardW, cardH));
             var cardShadow = cardImg.gameObject.AddComponent<Shadow>(); cardShadow.effectColor = new Color(0, 0, 0, .45f); cardShadow.effectDistance = new Vector2(0, -6);
@@ -178,11 +178,13 @@ namespace MageHero
             // Encabezado
             var title = UIText.Make(card.transform, "Title", info != null ? info.levelName : "Mapa", 26, Color.white, TextAnchor.UpperLeft);
             title.fontStyle = FontStyle.Bold;
+            var tol = title.gameObject.AddComponent<Outline>(); tol.effectColor = MenuStyle.Darker(accent, 0.45f); tol.effectDistance = new Vector2(2f, -2f);
             Place(title.rectTransform, new Vector2(0f, 1f), new Vector2(24f, -16f), new Vector2(520f, 32f), new Vector2(0f, 1f));
             var sub = UIText.Make(card.transform, "Subtitle", LevelSubtitle(), 14, new Color(accent.r, accent.g, accent.b, .95f), TextAnchor.UpperLeft);
             Place(sub.rectTransform, new Vector2(0f, 1f), new Vector2(26f, -50f), new Vector2(520f, 20f), new Vector2(0f, 1f));
-            var close = UIText.Make(card.transform, "CloseHint", "M / Esc  cerrar", 14, new Color(1f, 1f, 1f, .6f), TextAnchor.UpperRight);
-            Place(close.rectTransform, new Vector2(1f, 1f), new Vector2(-22f, -22f), new Vector2(200f, 20f), new Vector2(1f, 1f));
+            var close = UIText.Make(card.transform, "CloseHint", "M / Esc", 14, new Color(1f, 1f, 1f, .6f), TextAnchor.MiddleRight);
+            Place(close.rectTransform, new Vector2(1f, 1f), new Vector2(-84f, -28f), new Vector2(120f, 20f), new Vector2(1f, 1f));
+            MenuStyle.CloseButton(card.transform, () => { SetOpen(false); closedFrame = Time.frameCount; }, 52f);
 
             // Marco del mapa (detrás) + máscara redondeada + textura
             float mapX = -cardW / 2f + margin + frameW / 2f, mapY = -cardH / 2f + margin + frameW / 2f - 4f;

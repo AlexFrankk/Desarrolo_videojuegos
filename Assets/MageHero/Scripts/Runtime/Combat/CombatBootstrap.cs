@@ -23,7 +23,8 @@ namespace MageHero
         // sceneLoaded llega después de Awake/OnEnable y antes de Start: los Start de la IA y del HUD ya ven al mago con vida.
         static void OnSceneLoaded(Scene scene, LoadSceneMode mode)
         {
-            Time.timeScale = 1f;                                   // por si se salió de una pausa (Game Over)
+            Time.timeScale = 1f;                                   // por si se salió de una pausa (Game Over / menú de pausa)
+            AudioListener.pause = false;
             var tagged = GameObject.FindWithTag("Player");
             if (tagged == null) return;                            // menú principal u otra escena sin mago
 
@@ -77,6 +78,9 @@ namespace MageHero
             }
             if (Object.FindAnyObjectByType<GameOverScreen>() == null)
                 new GameObject("GameOverScreen").AddComponent<GameOverScreen>();
+            if (Object.FindAnyObjectByType<PauseMenu>() == null)
+                new GameObject("PauseMenu").AddComponent<PauseMenu>();
+            HudTheme.Apply();
         }
 
         static Transform FindDeep(Transform t, string name)

@@ -56,7 +56,7 @@ namespace MageHero.Editor
                 var t = hint.GetComponent<Text>();
                 if (t != null && !t.text.Contains("Clic"))
                 {
-                    t.text = "WASD: caminar · Shift: correr · Espacio: saltar · Enter/Clic: hechizo · Q/E o clic derecho: girar · Z/X: zoom · M: mapa · Esc: menú";
+                    t.text = "WASD: caminar · Shift: correr · Espacio: saltar · Enter/Clic: hechizo · Q/E o clic derecho: girar · Z/X: zoom · M: mapa · Esc: pausa";
                     t.rectTransform.sizeDelta = new Vector2(900, 24);
                 }
             }
