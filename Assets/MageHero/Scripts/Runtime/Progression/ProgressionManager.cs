@@ -22,6 +22,21 @@ namespace MageHero
         [Tooltip("Probabilidad extra si el mago tiene menos de la mitad de la vida.")]
         [Range(0f, 1f)] public float tomeLowHealthBonus = 0.25f;
 
+        [Header("Enemigos a distancia")]
+        [Tooltip("Magos oscuros al empezar el nivel.")]
+        public int evilMagesAtStart = 2;
+        [Tooltip("Máximo de magos oscuros vivos a la vez.")]
+        public int maxEvilMages = 5;
+        [Tooltip("Probabilidad de que un enemigo numérico nuevo ataque a distancia (desde amenaza 2).")]
+        [Range(0f, 1f)] public float rangedNumberChance = 0.25f;
+
+        [Tooltip("Segundos (mín, máx) entre apariciones al azar de magos oscuros cerca del jugador.")]
+        public Vector2 randomMageInterval = new Vector2(25f, 50f);
+
+        [Header("Pociones de escudo")]
+        [Range(0f, 1f)] public float shieldDropChance = 0.18f;
+        public int shieldPotionsAtStart = 3;
+
         [Header("Reto matemático")]
         public float failedChallengeCooldown = 15f;
         [Tooltip("Si la amenaza supera al mago en estos niveles, el reto se abre automáticamente.")]
@@ -42,6 +57,7 @@ namespace MageHero
         Text levelText, xpText, threatText, bannerText;
         Image xpFill;
         GameObject banner;
+        GameObject levelPanel;
 
         // ------------------------------------------------------------------ arranque automático
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
@@ -76,6 +92,9 @@ namespace MageHero
             HealthSystem.AnyDied += OnAnyDied;
             BuildHud();
             BossPath.BuildForCurrentLevel();
+            for (int i = 0; i < evilMagesAtStart; i++) SpawnEvilMage(Random.value < 0.5f ? 1 : 2);
+            StartCoroutine(RandomEvilMages());
+            PlaceShieldPotions();
             StartCoroutine(ScanEnemies());
             RefreshHud();
         }
@@ -98,6 +117,16 @@ namespace MageHero
                     if (hs == null || hs.team != Team.Enemy || hs.GetComponent<EnemyLevel>() != null) continue;
                     var el = hs.gameObject.AddComponent<EnemyLevel>();
                     el.SetLevel(LevelForNewEnemy(), refill: true);
+                    // Desde la amenaza 2, algunos enemigos numéricos también lanzan orbes.
+                    if (ThreatLevel >= 2 && hs.GetComponent<EnemyCaster3D>() == null && hs.GetComponent<NumberEnemy>() != null
+                        && hs.GetComponent<FinalBoss>() == null && Random.value < rangedNumberChance)
+                    {
+                        var c = hs.gameObject.AddComponent<EnemyCaster3D>();
+                        c.orbColor = new Color(1f, 0.45f, 0.15f);
+                        c.castRange = 11f;
+                        c.castHeight = 1.6f;
+                        el.SetLevel(el.Level, refill: false);         // aplica daño/cadencia del orbe según su nivel
+                    }
                 }
                 yield return wait;
             }
@@ -116,17 +145,38 @@ namespace MageHero
             Kills++;
             player.RegisterKill();
             TryDropTome(hs);
+            HitFX.Explosion(hs.transform.position + Vector3.up * 1f, hs.GetComponent<FinalBoss>() != null ? 2.2f : 1.1f, new Color(0.7f, 0.3f, 1f));
 
             int newThreat = LevelStats.Clamp(1 + Kills / LevelStats.KillsPerThreatLevel);
             if (newThreat > ThreatLevel)
             {
                 ThreatLevel = newThreat;
                 StrengthenAliveEnemies();
+                if (EvilMage.All.Count < maxEvilMages) SpawnEvilMage(ThreatLevel);
                 if (!player.IsMax) PendingChallenges++;
                 UIManager.Instance?.ShowMessage($"¡Los enemigos se volvieron más fuertes!  Amenaza Nv {ThreatLevel}", 3f);
                 if (ThreatLevel - player.Level >= forceChallengeGap) forceQueued = true;
             }
             RefreshHud();
+        }
+
+        /// Coloca un mago oscuro en una zona del nivel alejada del mago (25-70 m) con suelo caminable.
+        void SpawnEvilMage(int level)
+        {
+            var info = FindAnyObjectByType<LevelInfo>();
+            if (info == null || info.zones == null || info.zones.Length == 0 || playerHealth == null) return;
+            Vector3 pp = playerHealth.transform.position;
+            for (int attempt = 0; attempt < 20; attempt++)
+            {
+                var z = info.zones[Random.Range(0, info.zones.Length)];
+                Vector2 off = Random.insideUnitCircle * 8f;
+                var p = new Vector3(z.position.x + off.x, pp.y, z.position.y + off.y);
+                float d = Vector2.Distance(new Vector2(p.x, p.z), new Vector2(pp.x, pp.z));
+                if (d < 25f || d > 70f) continue;
+                if (!RuntimeMaterials.Ground(p, out var g)) continue;
+                EvilMage.Spawn(g, LevelStats.Clamp(level));
+                return;
+            }
         }
 
         void StrengthenAliveEnemies()
@@ -139,12 +189,52 @@ namespace MageHero
             }
         }
 
+        /// Magos oscuros que aparecen al azar cerca del jugador cada cierto tiempo (más dificultad).
+        IEnumerator RandomEvilMages()
+        {
+            while (true)
+            {
+                yield return new WaitForSeconds(Random.Range(randomMageInterval.x, randomMageInterval.y));
+                var ui = UIManager.Instance;
+                bool busy = ui == null || ui.IsModalOpen || ui.InCinematic || GameOverScreen.IsOpen;
+                if (busy || playerHealth == null || playerHealth.IsDead || EvilMage.All.Count >= maxEvilMages) continue;
+                Vector3 pp = playerHealth.transform.position;
+                for (int attempt = 0; attempt < 12; attempt++)
+                {
+                    Vector2 dir = Random.insideUnitCircle.normalized * Random.Range(20f, 32f);
+                    if (!RuntimeMaterials.Ground(pp + new Vector3(dir.x, 0f, dir.y), out var g)) continue;
+                    EvilMage.Spawn(g, LevelStats.Clamp(Random.Range(ThreatLevel - 1, ThreatLevel + 1)));
+                    HitFX.Explosion(g + Vector3.up, 1.2f, new Color(0.6f, 0.2f, 1f));
+                    ui.ShowMessage("¡Un mago oscuro apareció cerca!", 2.5f);
+                    break;
+                }
+            }
+        }
+
+        /// Reparte pociones de escudo por zonas del mapa al empezar el nivel.
+        void PlaceShieldPotions()
+        {
+            var info = FindAnyObjectByType<LevelInfo>();
+            if (info == null || info.zones == null || info.zones.Length == 0) return;
+            int placed = 0;
+            for (int attempt = 0; attempt < 30 && placed < shieldPotionsAtStart; attempt++)
+            {
+                var z = info.zones[Random.Range(0, info.zones.Length)];
+                Vector2 off = Random.insideUnitCircle * 6f;
+                if (!RuntimeMaterials.Ground(new Vector3(z.position.x + off.x, 0f, z.position.y + off.y), out var g)) continue;
+                ShieldPotion.Spawn(g, 0f);
+                placed++;
+            }
+        }
+
         void TryDropTome(HealthSystem enemy)
         {
             var el = enemy.GetComponent<EnemyLevel>();
             float chance = tomeDropChance + (playerHealth.Normalized < 0.5f ? tomeLowHealthBonus : 0f);
             if ((el != null && el.isBoss) || Random.value < chance)
                 HealingTome.Spawn(enemy.transform.position);
+            else if (Random.value < shieldDropChance)
+                ShieldPotion.Spawn(enemy.transform.position, 30f);
         }
 
         // ------------------------------------------------------------------ reto matemático
@@ -163,9 +253,13 @@ namespace MageHero
             var kb = Keyboard.current;
             if (kb != null && kb.rKey.wasPressedThisFrame && !busy) OpenChallenge();
 
+            // Durante las cinemáticas (puente, jefe) el panel de nivel del personaje no debe verse.
+            bool cine = ui != null && ui.InCinematic;
+            if (levelPanel != null && levelPanel.activeSelf == cine) levelPanel.SetActive(!cine);
+
             if (banner != null)
             {
-                bool show = PendingChallenges > 0 && !player.IsMax;
+                bool show = PendingChallenges > 0 && !player.IsMax && !cine;
                 if (banner.activeSelf != show) banner.SetActive(show);
                 if (show)
                 {
@@ -240,6 +334,7 @@ namespace MageHero
 
             // Panel de nivel, junto a la barra de vida (abajo a la izquierda), con el estilo del menú.
             var panel = MenuStyle.HudPanel("LevelPanel", hud.transform, MenuStyle.Blue);
+            levelPanel = panel.gameObject;          // PR #5: se oculta durante la escena del puente
             var prt = panel.rectTransform; prt.anchorMin = prt.anchorMax = prt.pivot = Vector2.zero;
             prt.anchoredPosition = new Vector2(354f, 14f); prt.sizeDelta = new Vector2(270f, 64f);
             var psh = panel.gameObject.AddComponent<Shadow>(); psh.effectColor = new Color(0, 0, 0, .45f); psh.effectDistance = new Vector2(0, -5);

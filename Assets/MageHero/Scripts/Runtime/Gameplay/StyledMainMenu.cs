@@ -72,6 +72,13 @@ namespace MageHero
         public void LoadScene(string scene)
         {
             if (loading) return;
+            // Progreso: hay que terminar el nivel anterior (derrotar a su jefe) para entrar.
+            if (!LevelProgress.IsUnlocked(scene))
+            {
+                ShowLoading("Nivel bloqueado", $"Termina «{LevelProgress.RequiredLevelName(scene)}» derrotando a su jefe para desbloquearlo.", 0f);
+                StartCoroutine(HideLoadingLater(2.5f));
+                return;
+            }
             if (!Application.CanStreamedLevelBeLoaded(scene))
             {
                 Debug.LogError($"[MageHero] La escena '{scene}' no está en la lista de escenas del build (File > Build Profiles).");
@@ -270,6 +277,22 @@ namespace MageHero
 
             var play = MenuStyle.GlossyButton("PlayButton", card.transform, "¡Jugar!", accent, 34, () => Load(scene));
             MenuStyle.Place((RectTransform)play.transform, new Vector2(.5f, 0f), new Vector2(0, 50), new Vector2(240, 70));
+
+            // Tarjeta bloqueada: velo oscuro con candado y el requisito para abrirla.
+            if (!LevelProgress.IsUnlocked(scene))
+            {
+                var veil = MenuStyle.Image("Bloqueado", card.transform, MenuStyle.RoundedRect(new Color(0.02f, 0.03f, 0.06f, 0.78f), new Color(0.02f, 0.03f, 0.06f, 0.78f), new Color(0, 0, 0, 0.8f), 24, 0), Color.white);
+                MenuStyle.Stretch(veil.rectTransform);
+                veil.raycastTarget = true;
+                var lockBtn = veil.gameObject.AddComponent<Button>();
+                lockBtn.transition = Selectable.Transition.None;
+                lockBtn.onClick.AddListener(() => Load(scene));
+                var lockIcon = MenuStyle.Label(veil.transform, "BLOQUEADO", 34, new Color(1f, 0.8f, 0.3f), new Color(0, 0, 0, .8f));
+                MenuStyle.Place(lockIcon.rectTransform, new Vector2(.5f, .5f), new Vector2(0, 30), new Vector2(330, 50));
+                var req = UIText.Make(veil.transform, "Requisito", $"Termina «{LevelProgress.RequiredLevelName(scene)}»\npara desbloquear este nivel", 18, Color.white);
+                req.horizontalOverflow = HorizontalWrapMode.Wrap;
+                MenuStyle.Place(req.rectTransform, new Vector2(.5f, .5f), new Vector2(0, -30), new Vector2(320, 60));
+            }
             return card.rectTransform;
         }
 

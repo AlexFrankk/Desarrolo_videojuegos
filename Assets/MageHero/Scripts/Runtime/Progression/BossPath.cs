@@ -40,7 +40,7 @@ namespace MageHero
             var player = GameObject.FindWithTag("Player");
             if (player != null && Flat(pts[pts.Count - 1] - player.transform.position) < Flat(pts[0] - player.transform.position)) pts.Reverse();
 
-            BossName = info.levelId == "primavera" ? "El Gran Cero" : "Guardián del Caos";
+            BossName = FinalBoss.NameFor(FinalBoss.KindForLevel(info.levelId));
             var go = new GameObject("CaminoAlJefe");
             go.AddComponent<BossPath>().Build(pts, route.w);
         }

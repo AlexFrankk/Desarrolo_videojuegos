@@ -88,7 +88,8 @@ namespace MageHero
                 var target = hit.collider.GetComponentInParent<HealthSystem>();
                 if (target != null && target.team != Team.Player)
                 {
-                    point = target.transform.position + Vector3.up * enemyAimHeight;
+                    // Centro real del cuerpo (sirve para enemigos altos o voladores como los dragones).
+                    point = hit.collider.bounds.center;
                     return true;
                 }
                 point = hit.point; ground = true;

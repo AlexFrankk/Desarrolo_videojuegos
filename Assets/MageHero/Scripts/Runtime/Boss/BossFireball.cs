@@ -29,6 +29,7 @@ namespace MageHero
                 if ((chest - transform.position).sqrMagnitude < 0.95f * 0.95f)
                 {
                     targetHealth.TakeDamage(damage);
+                    HitFX.Explosion(transform.position, 1f);
                     Destroy(gameObject);
                     return;
                 }

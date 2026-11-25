@@ -32,6 +32,13 @@ namespace MageHero
         /// Velocidad de movimiento: 2.3 → 2.85.
         public static float EnemyMoveSpeed(int level) => 2.3f * (1f + 0.06f * (Clamp(level) - 1));
 
+        /// Distancia a la que un enemigo detecta y empieza a perseguir al mago: 20 → 28 m.
+        public static float EnemyDetectionRange(int level) => 20f + 2f * (Clamp(level) - 1);
+        /// Daño del orbe de los enemigos a distancia (magos oscuros): 8 → 17.6.
+        public static float RangedDamage(int level) => 8f * (1f + 0.3f * (Clamp(level) - 1));
+        /// Segundos entre orbes: 2.6 → 1.77.
+        public static float RangedCooldown(int level) => 2.6f * (1f - 0.08f * (Clamp(level) - 1));
+
         /// Tinte que multiplica el color del enemigo: más oscuro y sombrío (violeta apagado) a mayor nivel.
         public static Color EnemyTint(int level)
         {
