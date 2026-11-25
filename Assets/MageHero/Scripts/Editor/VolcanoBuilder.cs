@@ -15,7 +15,7 @@ using UnityEngine.UI;
 namespace MageHero.Editor
 {
     /// Nivel aparte del jefe: un cráter volcánico pequeño (low poly) con cráteres de lava, conos piramidales, grietas
-    /// incandescentes, un altar de obsidiana y el Elemental alienígena de obsidiana (Diseños/Enemigo). Se genera con
+    /// incandescentes, un altar de obsidiana y el Gran Cero, elemental alienígena de obsidiana (Diseños/Enemigo). Se genera con
     /// Tools > Mage Hero > Rebuild > Nivel Volcán (jefe) y se guarda en Scenes/Level_volcan.unity.
     public static class VolcanoBuilder
     {
@@ -59,7 +59,7 @@ namespace MageHero.Editor
         {
             if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) return;
             Build();
-            EditorUtility.DisplayDialog("Nivel Volcán", "Escena generada: " + ScenePath + "\n\nPulsa Play para enfrentar al Elemental de Obsidiana.", "OK");
+            EditorUtility.DisplayDialog("Nivel Volcán", "Escena generada: " + ScenePath + "\n\nPulsa Play para enfrentar al Gran Cero.", "OK");
         }
 
         public static void Build()

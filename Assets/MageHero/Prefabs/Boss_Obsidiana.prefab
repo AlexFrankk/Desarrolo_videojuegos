@@ -36515,7 +36515,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5300e517a02bcd847abe422923bc903c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MageHero.ObsidianBoss
-  bossName: Elemental de Obsidiana
+  bossName: Gran Cero
   maxHealth: 900
   wakeRadius: 15
   moveSpeed: 1.7

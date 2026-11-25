@@ -5,7 +5,7 @@ using UnityEngine.UI;
 
 namespace MageHero
 {
-    /// Jefe del nivel volcánico: el Elemental alienígena de obsidiana (torso de obsidiana sobre una columna de humo).
+    /// Jefe del nivel volcánico: el Gran Cero, elemental alienígena de obsidiana (torso de obsidiana sobre una columna de humo).
     /// Duerme en su altar hasta que el mago se acerca; luego flota hacia él y alterna tres ataques:
     ///  - Zarpazo (cuerpo a cuerpo): echa el brazo atrás y golpea en látigo.
     ///  - Bolas de fuego: carga una bola en la mano y la lanza (abanico de 3 en la fase 2).
@@ -21,7 +21,7 @@ namespace MageHero
         enum Attack { None = 0, Swipe = 1, Fireball = 2, Eruption = 3 }
 
         [Header("Identidad")]
-        public string bossName = "Elemental de Obsidiana";
+        public string bossName = "Gran Cero";
 
         [Header("Estadísticas")]
         public float maxHealth = 900f;
@@ -189,7 +189,7 @@ namespace MageHero
         {
             CurrentState = State.Waking;
             CameraShake3D.Shake(0.35f, 1.2f);
-            UIManager.Instance?.ShowMessage($"¡{bossName} despierta!", 3f);
+            UIManager.Instance?.ShowMessage($"¡El {bossName} despierta!", 3f);
             UIManager.Instance?.SetObjective($"Derrota al {bossName}");
             IsoCameraFollow.SetEncounter(transform, cameraExtraDistance, 0.5f, -14f);
             BuildBar();

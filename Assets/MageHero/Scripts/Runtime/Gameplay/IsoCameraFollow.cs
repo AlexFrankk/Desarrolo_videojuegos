@@ -42,6 +42,20 @@ namespace MageHero
             if (c != null) c.encounterTarget = 0f;
         }
 
+        /// Encuadre de juego que tendría la cámara con el mago en su posición actual (sin suavizado).
+        /// Lo usa la cinemática de apertura para terminar exactamente donde empieza el gameplay.
+        public void GoalPose(out Vector3 pos, out Quaternion rot)
+        {
+            Vector3 f = target != null ? target.position : transform.position;
+            rot = Quaternion.Euler(Mathf.Clamp(pitch, minPitch, maxPitch), yaw, 0f);
+            Vector3 look = f + Vector3.up * lookHeight;
+            pos = look - rot * Vector3.forward * distance;
+            rot = Quaternion.LookRotation(look - pos, Vector3.up);
+        }
+
+        /// Coloca el foco sobre el mago al instante (tras teletransportarlo) para que no haya barrido de cámara.
+        public void Snap() { if (target != null) focus = target.position; }
+
         void OnEnable() { active = this; }
         void OnDisable() { if (active == this) active = null; }
 

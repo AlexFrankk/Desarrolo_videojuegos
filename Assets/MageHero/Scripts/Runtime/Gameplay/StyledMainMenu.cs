@@ -175,6 +175,14 @@ namespace MageHero
             MenuStyle.Place((RectTransform)help.transform, new Vector2(0f, 0f), new Vector2(90, 80), new Vector2(92, 92));
             var levels = MenuStyle.RoundButton("LevelsButton", mainPage.transform, "►", MenuStyle.Blue, 72, ShowLevels);
             MenuStyle.Place((RectTransform)levels.transform, new Vector2(0f, 0f), new Vector2(190, 72), new Vector2(72, 72));
+
+            // Vuelve a reproducir la cinemática de apertura y entra al Nivel 1.
+            var story = MenuStyle.GlossyButton("StoryButton", mainPage.transform, "Ver historia", MenuStyle.Purple, 28, () =>
+            {
+                IntroCinematic.ForceNext = true;
+                LoadScene(IntroCinematic.LevelScene);
+            });
+            MenuStyle.Place((RectTransform)story.transform, new Vector2(1f, 0f), new Vector2(-150, 72), new Vector2(240, 66));
         }
 
         void BuildLevelsPage()

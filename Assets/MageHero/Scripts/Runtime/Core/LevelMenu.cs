@@ -9,7 +9,7 @@ namespace MageHero
         {
             id = "volcan", name = "Cráter de Obsidiana", sub = "Volcán: el jefe te espera",
             lv = "Jefe", topic = "Combate final",
-            desc = "Un cráter de lava donde despierta el Elemental de Obsidiana.",
+            desc = "Un cráter de lava donde despierta el Gran Cero.",
             tags = new[] { "Jefe", "Lava", "Erupciones" },
             accent = "#ff6a1a",
             sky = 0x2a0f0c,
