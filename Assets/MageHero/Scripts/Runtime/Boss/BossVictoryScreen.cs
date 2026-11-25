@@ -33,6 +33,7 @@ namespace MageHero
             MenuStyle.Place((RectTransform)levels.transform, new Vector2(.5f, 0f), new Vector2(140, 130), new Vector2(250, 66));
             var menu = MenuStyle.GlossyButton("Menu", box, "Menú principal", MenuStyle.Green, 26, () => Load("MainMenu"));
             MenuStyle.Place((RectTransform)menu.transform, new Vector2(.5f, 0f), new Vector2(0, 50), new Vector2(280, 62));
+            ButtonSound.Add(again); ButtonSound.Add(levels); ButtonSound.Add(menu);   // sonidos hover/clic (rama alice)
         }
 
         static void Load(string scene)

@@ -343,12 +343,33 @@ namespace MageHero
         }
     }
 
+    /// Sonido de botón: "tic" al pasar el ratón (si está activo) y clic al pulsarlo.
+    /// Usar ButtonSound.Add(boton) DESPUÉS de cualquier onClick.RemoveAllListeners().
+    public class ButtonSound : MonoBehaviour, IPointerEnterHandler
+    {
+        Button button;
+
+        public static void Add(Button b)
+        {
+            if (b == null || b.GetComponent<ButtonSound>() != null) return;
+            b.gameObject.AddComponent<ButtonSound>().button = b;
+            b.onClick.AddListener(MageAudio.PlayUIClick);
+        }
+
+        public void OnPointerEnter(PointerEventData e)
+        {
+            if (button == null || button.interactable) MageAudio.PlayUIHover();
+        }
+    }
+
     /// Rebote suave del botón al pasar el ratón y al pulsarlo (funciona aunque el juego esté en pausa).
     public class ButtonBounce : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, IPointerDownHandler, IPointerUpHandler
     {
         public float hoverScale = 1.07f, pressScale = 0.95f;
         float target = 1f;
         bool over;
+
+        void Awake() => ButtonSound.Add(GetComponent<Button>());
 
         public void OnPointerEnter(PointerEventData e) { over = true; target = hoverScale; }
         public void OnPointerExit(PointerEventData e) { over = false; target = 1f; }

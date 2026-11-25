@@ -44,7 +44,7 @@ namespace MageHero
         HealthSystem playerHealth, self;
         NavMeshAgent agent;
         Vector3 home;
-        float nextAttack, calmUntil, phase, lunge;
+        float nextAttack, calmUntil, phase, lunge, nextAlert;
         int groundMask, obstacleMask;
         Vector3 bodyBasePos;
 
@@ -59,6 +59,7 @@ namespace MageHero
             var deco = GetComponent<NumberEnemy>();
             if (deco != null) deco.enabled = false;
             phase = Random.value * 6f;
+            self.Died += _ => MageAudio.PlayEnemyDeath(transform.position);
         }
 
         void OnEnable() => all.Add(this);
@@ -116,6 +117,12 @@ namespace MageHero
             bool engaged = CurrentState == State.Chase || CurrentState == State.Attack;
             if (!tooFarFromHome && ((engaged && dist < loseRange) || CanSee(to, dist)))
             {
+                // Rugido al detectar al jugador (no al seguir persiguiéndolo), con pausa por enemigo.
+                if (!engaged && Time.time >= nextAlert)
+                {
+                    MageAudio.PlayEnemyAlert(transform.position);
+                    nextAlert = Time.time + 8f;
+                }
                 CurrentState = State.Chase;
                 MoveTowards(player.position);
                 return;
@@ -199,6 +206,17 @@ namespace MageHero
             lunge = Mathf.MoveTowards(lunge, 0f, Time.deltaTime * 4f);
             body.localPosition = bodyBasePos + new Vector3(0f, Mathf.Abs(Mathf.Sin(t * 1.6f * speedFactor + phase)) * 0.12f, lunge * 0.45f);
             body.localScale = new Vector3(1f + w, 1f - w, 1f + w);
+        }
+
+        /// true si algún enemigo está persiguiendo o atacando al jugador (lo usa la música de persecución).
+        public static bool AnyChasing
+        {
+            get
+            {
+                foreach (var e in all)
+                    if (e.CurrentState == State.Chase || e.CurrentState == State.Attack) return true;
+                return false;
+            }
         }
 
         /// Hace que los enemigos cercanos se retiren unos segundos (lo usa el respawn del jugador).

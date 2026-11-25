@@ -36,6 +36,107 @@ namespace MageHero
             source.spatialBlend = 0f;
             source.volume = 0.35f;
             source.Play();
+
+            // Volcán: música de persecución mientras el jefe o los enemigos van a por el jugador.
+            if (levelInfo.levelId == "volcan") ChaseMusic.Attach(levelInfo.gameObject, source);
+        }
+
+        /// Derrumbe del puente (Costa Chatarra). Suena en 2D porque la cámara enfoca el puente durante la cinemática.
+        public static void PlayBridgeBreak(GameObject bridge)
+        {
+            var clip = Resources.Load<AudioClip>("Audio/PuenteRoto");
+            if (clip == null)
+            {
+                Debug.LogError("Could not load bridge clip 'Audio/PuenteRoto'.", bridge);
+                return;
+            }
+
+            var source = bridge.GetComponent<AudioSource>();
+            if (source == null)
+            {
+                source = bridge.AddComponent<AudioSource>();
+                source.playOnAwake = false;
+                source.spatialBlend = 0f;
+            }
+            source.PlayOneShot(clip, 1f);
+        }
+
+        static AudioClip enemyAlertClip, enemyDeathClip;
+        static float lastEnemyAlertTime = -10f;
+
+        /// Rugido cuando un enemigo ve al jugador y va a por él.
+        /// Pausa global corta para que varios enemigos que lo ven a la vez no se amontonen.
+        public static void PlayEnemyAlert(Vector3 position)
+        {
+            if (Time.time - lastEnemyAlertTime < 0.8f) return;
+            if (enemyAlertClip == null) enemyAlertClip = Resources.Load<AudioClip>("Audio/MonstruoAlerta");
+            if (enemyAlertClip == null) { Debug.LogError("Could not load clip 'Audio/MonstruoAlerta'."); return; }
+            lastEnemyAlertTime = Time.time;
+            PlayDetached(enemyAlertClip, position, 0.8f, Random.Range(0.94f, 1.06f));
+        }
+
+        /// Sonido de muerte del enemigo (el enemigo se destruye al instante, por eso suena desde un objeto aparte).
+        public static void PlayEnemyDeath(Vector3 position)
+        {
+            if (enemyDeathClip == null) enemyDeathClip = Resources.Load<AudioClip>("Audio/MonstruoMuerte");
+            if (enemyDeathClip == null) { Debug.LogError("Could not load clip 'Audio/MonstruoMuerte'."); return; }
+            PlayDetached(enemyDeathClip, position, 0.9f, Random.Range(0.95f, 1.05f));
+        }
+
+        // ------------------------------------------------------------------ UI (botones del menú)
+        static AudioClip uiHoverClip, uiClickClip;
+        static AudioSource uiSource;
+        static float lastHoverTime = -10f;
+
+        /// Fuente 2D que sobrevive a los cambios de escena: el clic de "Jugar" no se corta al cargar el nivel.
+        static AudioSource UISource()
+        {
+            if (uiSource != null) return uiSource;
+            var go = new GameObject("UIAudio");
+            Object.DontDestroyOnLoad(go);
+            uiSource = go.AddComponent<AudioSource>();
+            uiSource.playOnAwake = false;
+            uiSource.spatialBlend = 0f;
+            uiSource.ignoreListenerPause = true;   // suena también con el juego en pausa
+            return uiSource;
+        }
+
+        public static void PlayUIHover()
+        {
+            if (Time.unscaledTime - lastHoverTime < 0.05f) return;
+            lastHoverTime = Time.unscaledTime;
+            if (uiHoverClip == null) uiHoverClip = Resources.Load<AudioClip>("Audio/UI/UI_Hover");
+            if (uiHoverClip != null) UISource().PlayOneShot(uiHoverClip, 0.35f);
+        }
+
+        public static void PlayUIClick()
+        {
+            if (uiClickClip == null) uiClickClip = Resources.Load<AudioClip>("Audio/UI/UI_Click");
+            if (uiClickClip != null) UISource().PlayOneShot(uiClickClip, 0.7f);
+        }
+
+        static AudioClip bossRoarClip;
+
+        /// Rugido del jefe final (Elemental de Obsidiana). pitch < 1 = más grave (segunda fase).
+        public static void PlayBossRoar(Vector3 position, float pitch = 1f)
+        {
+            if (bossRoarClip == null) bossRoarClip = Resources.Load<AudioClip>("Audio/JefeFinal");
+            if (bossRoarClip == null) { Debug.LogError("Could not load clip 'Audio/JefeFinal'."); return; }
+            PlayDetached(bossRoarClip, position, 1f, pitch);
+        }
+
+        static void PlayDetached(AudioClip clip, Vector3 position, float volume, float pitch)
+        {
+            var go = new GameObject("SFX_" + clip.name);
+            go.transform.position = position;
+            var source = go.AddComponent<AudioSource>();
+            source.clip = clip;
+            source.volume = volume;
+            source.pitch = pitch;
+            source.spatialBlend = 0f;
+            source.playOnAwake = false;
+            source.Play();
+            Object.Destroy(go, clip.length / Mathf.Max(0.1f, pitch) + 0.1f);
         }
 
         public static void PlayAttack(GameObject player)
