@@ -15,6 +15,8 @@ namespace MageHero
     ///             Resources/Cinematic/Escena2_Cicatriz se reproduce; si no, versión en tiempo real.
     ///  Escena 3 · El presagio (silencio, aves, animales, árbol que cae, Gólem de Piedra)
     ///  Escena 4 · El llamado del maestro (chispa, báculo, título) → gameplay sin cortes.
+    /// Una voz en off (Narrator, español de México) cuenta la historia con subtítulos.
+    /// Al terminar empieza el tutorial con el Gólem (GolemTutorial); los enemigos del nivel vuelven al acabarlo.
     /// Se puede saltar manteniendo Esc. Todo se construye por código: no hace falta tocar la escena.
     [DefaultExecutionOrder(900)]
     public class IntroCinematic : MonoBehaviour
@@ -49,9 +51,11 @@ namespace MageHero
         // Estado del juego que se congela durante la cinemática
         readonly List<Behaviour> disabled = new List<Behaviour>();
         readonly List<GameObject> hidden = new List<GameObject>();
+        readonly List<Behaviour> enemiesOff = new List<Behaviour>();     // spawners e IA: siguen apagados durante el tutorial
         AudioSource ambience; float ambienceVol0;
         Coroutine main;
         bool finishing;
+        Quaternion? fallTreeRot0;          // rotación del árbol antes de caer (por si se salta la cinemática a mitad de la caída)
 
         // ------------------------------------------------------------------ arranque
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
@@ -76,12 +80,12 @@ namespace MageHero
         {
             if (!play)
             {
-                // Ya vista: el Gólem espera en el sendero del bosque, junto a la cabaña.
-                GolemEncounter.Spawn(set, null, false);
+                // Ya vista: el nivel empieza directamente (el Gólem espera como jefe al final del camino iluminado).
                 yield break;
             }
             IsPlaying = true;
             screen = CinematicScreen.Create();          // negro desde el primer fotograma
+            Narrator.SubtitleSink = screen.ShowCaption;
             yield return null;                          // deja que el HUD, el combate y la progresión se construyan
             yield return null;
             Freeze();
@@ -116,6 +120,7 @@ namespace MageHero
             StartCoroutine(CamMove(S + new Vector3(-1.12f, 0.06f, 0.5f), S + new Vector3(0f, 0.22f, 0f), 3.4f, 29f));
             StartCoroutine(screen.Fade(Color.black, 0f, 1.8f));
             mage.HoldAxe(set.axe);
+            Narrator.Say("intro_01");
             yield return W(1.6f);
 
             // 1.2 · ¡TOC! El hacha cae y parte el tronco.
@@ -147,6 +152,7 @@ namespace MageHero
             yield return W(2.4f);
             var seven = CineGlow.Number("7", null, set.pileTop, new Color(2.4f, 1.8f, 0.7f), 0.6f);
             seven.FadeTo(1f, 1.5f);
+            Narrator.Say("intro_02");
             mage.Face(set.pile.position);
             yield return W(1.8f);
 
@@ -208,6 +214,7 @@ namespace MageHero
             yield return W(0.4f);
             seven.Text = "10";
             seven.Flash(5f);
+            Narrator.Say("intro_03");
             screen.Flash(new Color(1f, 0.9f, 0.6f, 0.35f), 0.6f);
             CineGlow.Burst(set.pileTop, new Color(3f, 2.2f, 0.8f), 60, 1.6f, 0.12f, 2.2f, -0.35f);
             yield return W(0.9f);
@@ -225,6 +232,7 @@ namespace MageHero
                 Vector3 up = set.pileTop + new Vector3(-1f, 6f, -2f);
                 StartCoroutine(CamMove(up, up + new Vector3(0, 3f, -6f), 1.4f, 45f));
                 yield return W(1.0f);
+                Narrator.Say("intro_04"); Narrator.Say("intro_05");
                 yield return PlayVideo(clip);
                 SkyToCrimson(1f);
                 BuildSmokeColumn(1f);
@@ -249,6 +257,7 @@ namespace MageHero
             StartCoroutine(Rumble(2.5f, 0.06f));
             SkyToCrimson(2.5f);
             screen.Flash(new Color(1f, 0.25f, 0.15f, 0.45f), 0.7f);
+            Narrator.Say("intro_04");
             yield return W(0.8f);
 
             // 2.3 · El meteorito cae tras las montañas del sur.
@@ -269,6 +278,7 @@ namespace MageHero
             SetAmbience(0f, 0.05f);
             BuildSmokeColumn(0f);
             StartCoroutine(GrowSmoke(5f));
+            Narrator.Say("intro_05");
             yield return W(1.6f);
 
             // 2.5 · La onda de corrupción barre el mundo (anillo rojo que viene hacia la cámara).
@@ -298,6 +308,7 @@ namespace MageHero
             // 3.2 · Se detiene en seco. Silencio total; las hojas se quedan quietas en el aire.
             SetAmbience(0f, 0.05f);
             var lm = leaves.main; lm.simulationSpeed = 0f;
+            Narrator.Say("intro_06");
             StartCoroutine(CamMove(M + new Vector3(1.35f, 1.4f, 1.8f), M + new Vector3(0f, 1.4f, 0f), 3f, 32f));
             yield return W(2.8f);
 
@@ -360,6 +371,7 @@ namespace MageHero
 
             // 3.9 · Primer plano del pecho: arde la operación 8 + 5.
             golem.ShowOperation(true); golem.SetCracks(1.4f);
+            Narrator.Say("intro_07");
             Vector3 chest = golem.Chest.TransformPoint(new Vector3(0, 1.08f, 0.7f));
             CamCut(chest + golem.transform.forward * 2.6f + Vector3.up * -0.3f, chest, 30f);
             StartCoroutine(CamMove(chest + golem.transform.forward * 2.1f + Vector3.up * -0.25f, chest, 3f, 28f));
@@ -431,6 +443,7 @@ namespace MageHero
             spirit.Reach(mage.Chest + (spirit.transform.position - mage.Root.position).normalized * 0.12f);
             yield return W(0.9f);
             CineGlow.Burst(mage.Chest, new Color(0.8f, 1.6f, 3f), 40, 1.1f, 0.08f, 1.4f, -0.1f);
+            Narrator.Say("intro_08");
             screen.Flash(new Color(0.6f, 0.85f, 1f, 0.3f), 0.5f);
             mage.Glow(2.2f);
             yield return W(1.6f);
@@ -490,6 +503,7 @@ namespace MageHero
             mage.TakeStaff(set.staffProp);
             yield return W(0.2f);
             StaffAwakening();
+            Narrator.Say("intro_09");
             yield return W(3.2f);
 
             // 4.10 · Transición fluida detrás del hombro: el maestro a su derecha señala al Gólem.
@@ -513,6 +527,8 @@ namespace MageHero
         {
             if (!skipped)
             {
+                // deja terminar la frase del narrador antes del título
+                for (float t = 0; t < 9f && Narrator.IsSpeaking; t += Time.unscaledDeltaTime) yield return null;
                 // T.1 · Título
                 yield return screen.ShowTitle("MAGO DE LOS NÚMEROS", "", 1.2f, 1.6f, 1.0f);
             }
@@ -532,7 +548,10 @@ namespace MageHero
             StartCoroutine(FogTo(fogEnd0, 3f));
             StartCoroutine(screen.Release(skipped ? 0.6f : 2.4f));
             spirit.Reach(null);
-            yield return W(skipped ? 0.1f : 2.45f);
+            // Espera a que se retiren barras, fundido y post-procesado antes de destruir la pantalla de cine.
+            // (Antes, al saltar, se destruía a los 0.1 s con Fade/Release aún en marcha → MissingReferenceException.)
+            float minWait = skipped ? 0.85f : 2.45f;
+            for (float t = 0; t < minWait || (t < 4f && !screen.Released); t += Time.unscaledDeltaTime) yield return null;
             Finish();
         }
 
@@ -542,6 +561,7 @@ namespace MageHero
             screen.AllowSkip = false;
             if (main != null) StopCoroutine(main);
             Time.timeScale = 1f;
+            Narrator.Stop();
             yield return screen.Fade(Color.black, 1f, 0.35f);
             StopAllCoroutines();
             StartCoroutine(SkipFinish());
@@ -553,8 +573,12 @@ namespace MageHero
             foreach (var l in set.pileExtra) l.gameObject.SetActive(true);
             set.logWhole.gameObject.SetActive(false);
             set.logHalfA.gameObject.SetActive(true); set.logHalfB.gameObject.SetActive(true);
-            if (set.fallTree != null && set.fallTree.gameObject.activeSelf && Mathf.Abs(set.fallTree.eulerAngles.z) < 1f)
-                set.fallTree.rotation = Quaternion.Euler(0, 0, -88f) * set.fallTree.rotation;
+            if (set.fallTree != null && set.fallTree.gameObject.activeSelf && !ForestTrees.IsToppled(set.fallTree))
+            {
+                set.fallTree.rotation = Quaternion.AngleAxis(-88f, Vector3.forward) * (fallTreeRot0 ?? set.fallTree.rotation);
+                ForestTrees.MarkToppled(set.fallTree);
+            }
+            foreach (var t in set.pathTrees) ForestTrees.ToppleInstant(t, ForestTrees.AwayFromPath(t, set.golemFrom, set.golemStop));
             if (golem == null) golem = StoneGolem.Create(set.golemStop, Quaternion.identity);
             golem.StopAllCoroutines();
             golem.transform.position = set.golemStop;
@@ -586,17 +610,26 @@ namespace MageHero
             PlayerPrefs.Save();
             Time.timeScale = 1f;
             rig = false;
+            Transform playerT = mage.Root;
             mage.Release();
             mage = null;
+            Narrator.Stop();
+            Narrator.SubtitleSink = null;
             foreach (var b in disabled) if (b != null) b.enabled = true;
-            foreach (var g in hidden) if (g != null) g.SetActive(true);
-            disabled.Clear(); hidden.Clear();
+            disabled.Clear();
+            // Los enemigos siguen apagados/ocultos hasta que termine el tutorial.
+            var enemies = new List<Behaviour>(enemiesOff); var hiddenEnemies = new List<GameObject>(hidden);
+            enemiesOff.Clear(); hidden.Clear();
             if (iso != null) { iso.Snap(); iso.enabled = true; }
             if (leaves != null) { var lm = leaves.main; lm.simulationSpeed = 1f; }
             SetAmbience(ambienceVol0, 1f);
             var ui = UIManager.Instance;
             if (ui != null) ui.EndCinematic();
-            GolemEncounter.Spawn(set, golem, true, spirit);
+            GolemTutorial.Begin(golem, spirit, playerT, set.golemFrom, () =>
+            {
+                foreach (var b in enemies) if (b != null) b.enabled = true;
+                foreach (var g in hiddenEnemies) if (g != null) g.SetActive(true);
+            });
             IsPlaying = false;
             if (screen != null) Destroy(screen.gameObject, 0.1f);
             Destroy(this, 0.2f);
@@ -609,10 +642,10 @@ namespace MageHero
             iso = cam != null ? cam.GetComponent<IsoCameraFollow>() : null;
             skyColor0 = cam.backgroundColor; fogColor0 = RenderSettings.fogColor; fogEnd0 = RenderSettings.fogEndDistance; fogStart0 = RenderSettings.fogStartDistance;
             Off(iso);
-            foreach (var s in FindObjectsByType<EnemySpawner>(FindObjectsSortMode.None)) Off(s);
+            foreach (var s in FindObjectsByType<EnemySpawner>(FindObjectsSortMode.None)) OffEnemy(s);
             foreach (var ai in FindObjectsByType<EnemyAI3D>(FindObjectsSortMode.None))
             {
-                Off(ai);
+                OffEnemy(ai);
                 if (Vector3.Distance(ai.transform.position, set.stumpTop) < 26f && ai.gameObject.activeSelf) { ai.gameObject.SetActive(false); hidden.Add(ai.gameObject); }
             }
             // HUD: se ocultan todos los lienzos de pantalla (menos el de la cinemática).
@@ -636,6 +669,7 @@ namespace MageHero
         }
 
         void Off(Behaviour b) { if (b != null && b.enabled) { b.enabled = false; disabled.Add(b); } }
+        void OffEnemy(Behaviour b) { if (b != null && b.enabled) { b.enabled = false; enemiesOff.Add(b); } }
 
         // ------------------------------------------------------------------ cámara
         enum Ease { Linear, InOut, In, Out }
@@ -791,6 +825,13 @@ namespace MageHero
             }
             tree.position = p0;
             CameraShake3D.Shake(0.1f, 0.3f);
+            fallTreeRot0 = r0;
+            // El Gólem se abre paso: los demás árboles de su ruta caen hacia los lados (ya no los atraviesa).
+            for (int i = 0; i < set.pathTrees.Count; i++)
+            {
+                var pt = set.pathTrees[i];
+                ForestTrees.StartTopple(pt, ForestTrees.AwayFromPath(pt, set.golemFrom, set.golemStop), 1.0f, 0.15f + i * 0.22f);
+            }
             Vector3 axis = Vector3.forward;              // gira sobre Z: la copa cae hacia +X (este), cruzando el sendero del Gólem
             for (float t = 0; t < 1f; t += Time.deltaTime / 1.1f)
             {
@@ -799,6 +840,7 @@ namespace MageHero
                 yield return null;
             }
             tree.rotation = Quaternion.AngleAxis(-88f, axis) * r0;
+            ForestTrees.MarkToppled(tree);
             CameraShake3D.Shake(0.35f, 0.5f);
             Dust(p0 + new Vector3(3.5f, 0.4f, 0), 60, 2.2f);
             Dust(p0 + new Vector3(1.5f, 0.4f, 0), 30, 1.6f);
@@ -1047,6 +1089,7 @@ namespace MageHero
         void OnDestroy()
         {
             IsPlaying = false;
+            if (screen != null && Narrator.SubtitleSink == (Action<string, float>)screen.ShowCaption) Narrator.SubtitleSink = null;
             if (Time.timeScale < 1f) Time.timeScale = 1f;
         }
     }

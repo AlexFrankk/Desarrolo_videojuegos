@@ -54,31 +54,21 @@ namespace MageHero
             UIManager.Instance?.SetPlayerLocked(true);
             var hud = GameObject.Find("HUD");
             if (hud == null) return;
-            var root = new GameObject("NivelCompletado", typeof(RectTransform), typeof(Image));
-            root.transform.SetParent(hud.transform, false);
-            var rrt = (RectTransform)root.transform; rrt.anchorMin = Vector2.zero; rrt.anchorMax = Vector2.one; rrt.offsetMin = rrt.offsetMax = Vector2.zero;
-            var bg = root.GetComponent<Image>(); bg.color = new Color(0.02f, 0.04f, 0.08f, 0.78f); bg.raycastTarget = true;
-
-            var card = new GameObject("Card", typeof(RectTransform), typeof(Image));
-            card.transform.SetParent(root.transform, false);
-            var crt = (RectTransform)card.transform; crt.anchorMin = crt.anchorMax = new Vector2(.5f, .5f); crt.sizeDelta = new Vector2(600f, 320f);
-            card.GetComponent<Image>().color = new Color(0.114f, 0.208f, 0.341f, 0.98f);
-            var edge = card.AddComponent<Outline>(); edge.effectColor = new Color(1f, 0.72f, 0.01f); edge.effectDistance = new Vector2(3f, -3f);
-
-            var title = UIText.Make(card.transform, "Title", "¡NIVEL COMPLETADO!", 40, new Color(1f, 0.78f, 0.25f));
-            title.fontStyle = FontStyle.Bold; Place(title.rectTransform, new Vector2(0f, 105f), new Vector2(560f, 56f));
+            // Mismo estilo low poly que el resto de ventanas (MenuStyle.Window).
+            var box = MenuStyle.Window(hud.transform, "NivelCompletado", "¡NIVEL COMPLETADO!", new Vector2(620, 380), MenuStyle.Gold, null, out var root);
+            root.transform.SetAsLastSibling();
             string info = next != null ? $"Derrotaste a {bossName}.\nDesbloqueaste: {next.name}" : $"Derrotaste a {bossName}.\n¡Completaste todos los niveles!";
-            var sub = UIText.Make(card.transform, "Sub", info, 21, Color.white);
-            Place(sub.rectTransform, new Vector2(0f, 30f), new Vector2(560f, 70f));
+            var sub = MenuStyle.Label(box, info, 24, MenuStyle.Cream, new Color(0, 0, 0, .6f), false);
+            MenuStyle.Place(sub.rectTransform, new Vector2(.5f, 1f), new Vector2(0, -130), new Vector2(560, 80));
 
             if (next != null)
             {
                 string scene = LevelMenu.SceneName(next);
-                Button(card.transform, $"Siguiente: {next.name}", new Color(1f, 0.72f, 0.01f), new Color(0.1f, 0.12f, 0.2f), new Vector2(-145f, -95f),
-                       () => { Time.timeScale = 1f; SceneManager.LoadScene(scene); });
+                var go = MenuStyle.GlossyButton("Next", box, $"Siguiente: {next.name}", MenuStyle.Orange, 24, () => { Time.timeScale = 1f; SceneManager.LoadScene(scene); });
+                MenuStyle.Place((RectTransform)go.transform, new Vector2(.5f, 0f), new Vector2(-150, 60), new Vector2(280, 66));
             }
-            Button(card.transform, "Menú principal", new Color(0.2f, 0.62f, 0.32f), Color.white, new Vector2(next != null ? 145f : 0f, -95f),
-                   () => { Time.timeScale = 1f; SceneManager.LoadScene("MainMenu"); });
+            var menu = MenuStyle.GlossyButton("Menu", box, "Menú principal", MenuStyle.Green, 24, () => { Time.timeScale = 1f; SceneManager.LoadScene("MainMenu"); });
+            MenuStyle.Place((RectTransform)menu.transform, new Vector2(.5f, 0f), new Vector2(next != null ? 150 : 0, 60), new Vector2(260, 66));
         }
 
         static void Place(RectTransform rt, Vector2 pos, Vector2 size)

@@ -9,7 +9,7 @@ namespace MageHero
     {
         [SerializeField] float walkInterval = 0.48f;   // segundos entre pasos al caminar
         [SerializeField] float runInterval = 0.30f;    // segundos entre pasos al correr
-        [SerializeField] float volume = 0.55f;
+        [SerializeField] float volume = 0.2f;           // antes 0.55: se oían demasiado fuertes
         [SerializeField] float minSpeed = 0.08f;       // NormalizedSpeed mínimo para que suenen
 
         static AudioClip[] clips;

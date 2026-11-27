@@ -15,7 +15,8 @@ namespace MageHero
         Canvas canvas;
         RectTransform barTop, barBottom;
         Image fade;
-        Text title, subtitle, skipLabel;
+        Text title, subtitle, skipLabel, caption;
+        float captionUntil;
         Image skipFill;
         CanvasGroup titleGroup, skipGroup;
         float bars, barsTarget;
@@ -34,6 +35,8 @@ namespace MageHero
         float skipHold;
         public bool SkipRequested { get; private set; }
         public bool AllowSkip = true;
+        /// true cuando Release() terminó de retirar barras y post-procesado (ya se puede destruir sin cortes).
+        public bool Released { get; private set; }
         const float SkipHoldSeconds = 0.9f;
 
         public static CinematicScreen Create()
@@ -97,7 +100,21 @@ namespace MageHero
             skipLabel = UIText.Make(sk.transform, "Texto", "Mantén Esc para saltar  ►", 22, new Color(1, 1, 1, .9f));
             MenuStyle.Stretch(skipLabel.rectTransform);
 
+            // Subtítulos de la voz en off (sobre la barra negra inferior)
+            caption = UIText.Make(transform, "Subtitulo", "", 30, new Color(1f, 0.97f, 0.9f, 1f));
+            var co = caption.gameObject.AddComponent<Outline>(); co.effectColor = new Color(0, 0, 0, 0.85f); co.effectDistance = new Vector2(2, -2);
+            caption.horizontalOverflow = HorizontalWrapMode.Wrap;
+            MenuStyle.Place(caption.rectTransform, new Vector2(.5f, 0), new Vector2(0, 64), new Vector2(1500, 96));
+
             BuildVolume();
+        }
+
+        /// Subtítulo de la narración; texto vacío lo borra.
+        public void ShowCaption(string text, float seconds)
+        {
+            if (caption == null) return;
+            caption.text = text;
+            captionUntil = Time.unscaledTime + seconds;
         }
 
         RectTransform Bar(string name, Vector2 anchor)
@@ -172,16 +189,19 @@ namespace MageHero
         public void SetVignette(float k) => vignette.intensity.value = k;
         public float Weight { get => volume.weight; set => volume.weight = Mathf.Clamp01(value); }
 
+        /// Fundido. Si la pantalla se destruye a mitad (fin de la cinemática o salto), la corrutina se detiene sola.
         public IEnumerator Fade(Color c, float to, float seconds)
         {
+            if (fade == null) yield break;
             Color from = fade.color;
             float a0 = from.a;
             for (float t = 0; t < 1f; t += Time.unscaledDeltaTime / Mathf.Max(0.01f, seconds))
             {
+                if (fade == null) yield break;
                 fade.color = new Color(c.r, c.g, c.b, Mathf.Lerp(a0, to, t));
                 yield return null;
             }
-            fade.color = new Color(c.r, c.g, c.b, to);
+            if (fade != null) fade.color = new Color(c.r, c.g, c.b, to);
         }
 
         /// Destello instantáneo (blanco o rojo) que se apaga en <paramref name="seconds"/>.
@@ -212,14 +232,17 @@ namespace MageHero
         {
             SetBars(0f);
             AllowSkip = false;
+            if (volume == null) yield break;
             float w0 = volume.weight;
-            for (float t = 0; t < 1f; t += Time.unscaledDeltaTime / seconds)
+            for (float t = 0; t < 1f; t += Time.unscaledDeltaTime / Mathf.Max(0.01f, seconds))
             {
+                if (volume == null || skipGroup == null) yield break;
                 volume.weight = Mathf.Lerp(w0, 0f, t * t * (3f - 2f * t));
                 skipGroup.alpha = Mathf.Min(skipGroup.alpha, 1f - t);
                 yield return null;
             }
-            volume.weight = 0f;
+            if (volume != null) volume.weight = 0f;
+            Released = true;
         }
 
         void Update()
@@ -230,6 +253,7 @@ namespace MageHero
             float e = bars * bars * (3f - 2f * bars);
             barTop.sizeDelta = new Vector2(0, h * e);
             barBottom.sizeDelta = new Vector2(0, h * e);
+            if (caption != null && captionUntil > 0f && Time.unscaledTime > captionUntil) { caption.text = ""; captionUntil = 0f; }
 
             // Saltar: mantener Esc (o Espacio) un momento. El aviso aparece al pulsar cualquier tecla o mover el ratón.
             var kb = Keyboard.current; var mouse = Mouse.current;

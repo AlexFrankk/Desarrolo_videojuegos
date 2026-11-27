@@ -5,15 +5,16 @@ using UnityEngine.UI;
 
 namespace MageHero
 {
-    /// Gráficos del menú generados por código (sin imágenes externas):
-    /// botones redondeados con brillo, círculos, cinta del título y fondo con manchas.
+    /// Gráficos de la interfaz generados por código (sin imágenes externas), con ESTILO LOW POLY a juego con el mundo:
+    /// paneles con esquinas en bisel y relleno facetado, botones octogonales tipo gema, banderolas rectas con cola en V
+    /// y un fondo de montañas low poly. Paleta otoñal apagada (no chillona) y textos con una sola sombra.
     public static class MenuStyle
     {
-        public static readonly Color Orange = Hex(0xff7a1a), OrangeDark = Hex(0xc4470c);
-        public static readonly Color Red = Hex(0xf0533a), RedDark = Hex(0xa82a1a);
-        public static readonly Color Green = Hex(0x8fd63a), GreenDark = Hex(0x4f9a1c);
-        public static readonly Color Purple = Hex(0xc23ad6), PurpleDark = Hex(0x7a1a8f);
-        public static readonly Color Blue = Hex(0x3aa7e8), BlueDark = Hex(0x1a6aa8);
+        public static readonly Color Orange = Hex(0xe8863a), OrangeDark = Hex(0xa9521d);
+        public static readonly Color Red = Hex(0xd45a43), RedDark = Hex(0x8f3324);
+        public static readonly Color Green = Hex(0x6da84e), GreenDark = Hex(0x3f6e2e);
+        public static readonly Color Purple = Hex(0x8b62c2), PurpleDark = Hex(0x553a80);
+        public static readonly Color Blue = Hex(0x4b8fc4), BlueDark = Hex(0x2b5c86);
         public static readonly Color Panel = new Color(0.10f, 0.13f, 0.17f, 0.88f);
 
         static readonly Dictionary<string, Sprite> Cache = new Dictionary<string, Sprite>();
@@ -22,131 +23,141 @@ namespace MageHero
         public static Color Darker(Color c, float k = 0.62f) => new Color(c.r * k, c.g * k, c.b * k, c.a);
 
         // ------------------------------------------------------------------ Sprites
-        /// Rectángulo redondeado con degradado vertical y borde. Se usa como sprite 9-slice.
+        /// Panel con esquinas en bisel (low poly), degradado vertical facetado y borde. Sprite 9-slice
+        /// (los parámetros se llaman igual que la versión redondeada anterior para no romper a nadie).
         public static Sprite RoundedRect(Color top, Color bottom, Color border, int radius = 26, int borderWidth = 4, int w = 128, int h = 96)
         {
             string key = $"rr{top}{bottom}{border}{radius}{borderWidth}{w}{h}";
             if (Cache.TryGetValue(key, out var cached) && cached != null) return cached;
-            var tex = NewTex(w, h);
-            var px = new Color[w * h];
-            for (int y = 0; y < h; y++)
-                for (int x = 0; x < w; x++)
-                {
-                    float d = RoundedDist(x + 0.5f, y + 0.5f, w, h, radius);
-                    float a = Mathf.Clamp01(0.5f - d);
-                    Color c = Color.Lerp(bottom, top, (float)y / (h - 1));
-                    if (d > -borderWidth) c = Color.Lerp(c, border, Mathf.Clamp01(d + borderWidth + 0.5f));
-                    c.a *= a;
-                    px[y * w + x] = c;
-                }
-            tex.SetPixels(px); tex.Apply();
-            float b = radius + borderWidth;
-            return Cache[key] = Sprite.Create(tex, new Rect(0, 0, w, h), new Vector2(.5f, .5f), 100f, 0, SpriteMeshType.FullRect, new Vector4(b, b, b, b));
+            float c = Mathf.Max(4f, radius * 0.8f);
+            float b = c + borderWidth + 1f;
+            var sp = LowPolyUI.Paint(key, w, h, LowPolyUI.Chamfer(w, h, c), top, bottom, border, borderWidth, key.GetHashCode(), 0.06f, new Vector4(b, b, b, b), 26);
+            return Cache[key] = sp;
         }
 
-        /// Brillo blanco (más opaco arriba) para la mitad superior de un botón.
+        /// Bisel iluminado de la mitad superior de un botón (una franja plana y tenue, no un brillo de plástico).
         public static Sprite Gloss(int radius = 20, int w = 96, int h = 48)
         {
             string key = $"gl{radius}{w}{h}";
             if (Cache.TryGetValue(key, out var cached) && cached != null) return cached;
-            var tex = NewTex(w, h);
-            var px = new Color[w * h];
-            for (int y = 0; y < h; y++)
-                for (int x = 0; x < w; x++)
-                {
-                    float d = RoundedDist(x + 0.5f, y + 0.5f, w, h, radius);
-                    float a = Mathf.Clamp01(0.5f - d) * Mathf.Lerp(0.05f, 0.55f, (float)y / (h - 1));
-                    px[y * w + x] = new Color(1f, 1f, 1f, a);
-                }
-            tex.SetPixels(px); tex.Apply();
-            return Cache[key] = Sprite.Create(tex, new Rect(0, 0, w, h), new Vector2(.5f, .5f), 100f, 0, SpriteMeshType.FullRect, new Vector4(radius, radius, radius, radius));
+            float c = Mathf.Max(3f, radius * 0.7f);
+            var sp = LowPolyUI.Paint(key, w, h, LowPolyUI.Chamfer(w, h, c), new Color(1, 1, 1, 0.14f), new Color(1, 1, 1, 0.03f), Color.white, 0, 3, 0.25f,
+                                     new Vector4(c + 1, c + 1, c + 1, c + 1), 24);
+            return Cache[key] = sp;
         }
 
+        /// Botón redondo → octógono facetado (como una gema tallada).
         public static Sprite Circle(Color top, Color bottom, Color border, int size = 128, int borderWidth = 6)
         {
             string key = $"ci{top}{bottom}{border}{size}{borderWidth}";
             if (Cache.TryGetValue(key, out var cached) && cached != null) return cached;
-            var tex = NewTex(size, size);
-            var px = new Color[size * size];
-            float r = size * 0.5f;
-            for (int y = 0; y < size; y++)
-                for (int x = 0; x < size; x++)
-                {
-                    float d = Vector2.Distance(new Vector2(x + 0.5f, y + 0.5f), new Vector2(r, r)) - r;
-                    Color c = Color.Lerp(bottom, top, (float)y / (size - 1));
-                    if (d > -borderWidth) c = Color.Lerp(c, border, Mathf.Clamp01(d + borderWidth + 0.5f));
-                    // brillo en la parte superior
-                    float gy = (y - size * 0.55f) / (size * 0.45f), gx = (x - r) / (r * 0.75f);
-                    if (gy > 0f && gx * gx + (gy - 0.5f) * (gy - 0.5f) * 4f < 1f) c = Color.Lerp(c, Color.white, 0.35f * gy);
-                    c.a *= Mathf.Clamp01(0.5f - d);
-                    px[y * size + x] = c;
-                }
-            tex.SetPixels(px); tex.Apply();
-            return Cache[key] = Sprite.Create(tex, new Rect(0, 0, size, size), new Vector2(.5f, .5f));
+            var sp = LowPolyUI.Paint(key, size, size, LowPolyUI.Polygon(size, 8, 22.5f), top, bottom, border, Mathf.Max(2, borderWidth - 2), 17, 0.09f, default, 30);
+            return Cache[key] = sp;
         }
 
-        /// Cinta (banner) del título: banda con borde ondulado y extremos en punta de cola.
+        /// Banderola del título: banda recta facetada con cola en V en los dos extremos.
         public static Sprite Ribbon(Color fill, Color border, int w = 512, int h = 128)
         {
             string key = $"ri{fill}{border}{w}{h}";
             if (Cache.TryGetValue(key, out var cached) && cached != null) return cached;
-            var tex = NewTex(w, h);
-            var px = new Color[w * h];
-            for (int y = 0; y < h; y++)
-                for (int x = 0; x < w; x++)
-                {
-                    float u = (x + 0.5f) / w, v = (y + 0.5f) / h;
-                    float wave = Mathf.Sin(u * Mathf.PI * 2f) * 0.06f;           // banda ligeramente ondulada
-                    float top = 0.92f + wave, bottom = 0.10f + wave;
-                    float mid = (top + bottom) * 0.5f, half = (top - bottom) * 0.5f;
-                    float notch = 34f * Mathf.Clamp01(1f - Mathf.Abs(v - mid) / half);  // corte en V en los extremos (cola)
-                    float distTop = (top - v) * h, distBot = (v - bottom) * h;
-                    float distSide = Mathf.Min(x + 0.5f, w - x - 0.5f) - notch;
-                    float d = Mathf.Min(Mathf.Min(distTop, distBot), distSide);
-                    Color c = Color.Lerp(Darker(fill, 0.85f), fill, Mathf.InverseLerp(bottom, top, v));
-                    if (d < 7f) c = Color.Lerp(border, c, Mathf.Clamp01(d - 6f));
-                    c.a = Mathf.Clamp01(d + 0.5f);
-                    px[y * w + x] = c;
-                }
-            tex.SetPixels(px); tex.Apply();
-            return Cache[key] = Sprite.Create(tex, new Rect(0, 0, w, h), new Vector2(.5f, .5f));
+            var sp = LowPolyUI.Paint(key, w, h, LowPolyUI.Banner(w, h, 36f), fill, Darker(fill, 0.86f), border, 5, 23, 0.07f, default, 44);
+            return Cache[key] = sp;
         }
 
-        /// Fondo gris pizarra con manchas redondas y viñeta, parecido a una pizarra o piedra.
+        /// Fondo del menú: cielo de atardecer en facetas y tres capas de montañas low poly (como el borde de los mapas).
         public static Texture2D Background(int w = 640, int h = 360, int seed = 7)
         {
             var tex = NewTex(w, h);
             var px = new Color[w * h];
             var rnd = new System.Random(seed);
-            Color baseC = new Color(0.27f, 0.33f, 0.37f), dark = new Color(0.12f, 0.15f, 0.18f);
-            for (int i = 0; i < px.Length; i++) px[i] = baseC;
+            Color skyTop = new Color(0.10f, 0.14f, 0.22f), skyLow = new Color(0.36f, 0.30f, 0.33f);
 
-            for (int n = 0; n < 70; n++)                                         // manchas
+            // cielo facetado (triángulos grandes con tono ligeramente distinto)
+            const int cell = 64;
+            int cols = w / cell + 1, rows = h / cell + 1;
+            var pts = new Vector2[(cols + 1) * (rows + 1)];
+            for (int y = 0; y <= rows; y++)
+                for (int x = 0; x <= cols; x++)
+                    pts[y * (cols + 1) + x] = new Vector2((x + (float)(rnd.NextDouble() - .5) * 0.8f) * cell, (y + (float)(rnd.NextDouble() - .5) * 0.8f) * cell);
+            var tone = new float[w * h];
+            for (int y = 0; y < rows; y++)
+                for (int x = 0; x < cols; x++)
+                {
+                    Vector2 a = pts[y * (cols + 1) + x], b = pts[y * (cols + 1) + x + 1], c = pts[(y + 1) * (cols + 1) + x], d = pts[(y + 1) * (cols + 1) + x + 1];
+                    Tri(tone, w, h, a, b, d, (float)(rnd.NextDouble() - .5) * 0.12f);
+                    Tri(tone, w, h, a, d, c, (float)(rnd.NextDouble() - .5) * 0.12f);
+                }
+            for (int y = 0; y < h; y++)
+                for (int x = 0; x < w; x++)
+                {
+                    Color c = Color.Lerp(skyLow, skyTop, Mathf.Pow(y / (float)h, 0.8f));
+                    float t = tone[y * w + x];
+                    px[y * w + x] = new Color(c.r * (1 + t), c.g * (1 + t), c.b * (1 + t), 1f);
+                }
+
+            // montañas: tres capas, de la más lejana (clara) a la más cercana (oscura); cada cara con su tono
+            Color[] layer = { new Color(0.27f, 0.30f, 0.38f), new Color(0.19f, 0.22f, 0.29f), new Color(0.11f, 0.14f, 0.19f) };
+            float[] baseY = { 0.40f, 0.27f, 0.12f }, peak = { 0.28f, 0.24f, 0.2f };
+            for (int L = 0; L < 3; L++)
             {
-                float cx = (float)rnd.NextDouble() * w, cy = (float)rnd.NextDouble() * h;
-                float r = 6f + (float)rnd.NextDouble() * 34f, k = 0.06f + (float)rnd.NextDouble() * 0.12f;
-                int x0 = Mathf.Max(0, (int)(cx - r - 2)), x1 = Mathf.Min(w - 1, (int)(cx + r + 2));
-                int y0 = Mathf.Max(0, (int)(cy - r - 2)), y1 = Mathf.Min(h - 1, (int)(cy + r + 2));
-                for (int y = y0; y <= y1; y++)
-                    for (int x = x0; x <= x1; x++)
-                    {
-                        float d = Mathf.Sqrt((x - cx) * (x - cx) + (y - cy) * (y - cy));
-                        float a = Mathf.Clamp01((r - d) / 3f) * k;
-                        if (d > r - 2.5f && d < r + 1f) a += 0.05f;              // borde marcado
-                        px[y * w + x] = Color.Lerp(px[y * w + x], dark, a);
-                    }
+                // cresta en zigzag: cumbre, valle, cumbre… (picos afilados, no bloques)
+                var ridge = new List<Vector2>();
+                float x = -30f; bool up = rnd.NextDouble() < 0.5;
+                while (x < w + 60f)
+                {
+                    float k = up ? 0.55f + (float)rnd.NextDouble() * 0.45f : (float)rnd.NextDouble() * 0.2f;
+                    ridge.Add(new Vector2(x, h * (baseY[L] + k * peak[L])));
+                    x += (L == 0 ? 55f : 45f) + (float)rnd.NextDouble() * 60f;
+                    up = !up;
+                }
+                for (int i = 0; i < ridge.Count - 1; i++)
+                {
+                    Vector2 a = ridge[i], b = ridge[i + 1];
+                    // cada tramo: dos triángulos hasta el suelo, cara iluminada (izquierda) y cara en sombra
+                    Vector2 a0 = new Vector2(a.x, 0), b0 = new Vector2(b.x, 0);
+                    Color lit = layer[L] * 1.12f, shade = layer[L] * 0.9f; lit.a = shade.a = 1f;
+                    TriColor(px, w, h, a, b, a0, a.y > b.y ? shade : lit);
+                    TriColor(px, w, h, b, b0, a0, a.y > b.y ? shade * 0.95f : lit * 0.95f);
+                }
             }
-            for (int y = 0; y < h; y++)                                          // viñeta + grano
+            // viñeta suave
+            for (int y = 0; y < h; y++)
                 for (int x = 0; x < w; x++)
                 {
                     float u = x / (float)w - 0.5f, v = y / (float)h - 0.5f;
-                    float vig = Mathf.Clamp01((u * u + v * v) * 2.2f);
-                    float grain = ((float)rnd.NextDouble() - 0.5f) * 0.035f;
-                    Color c = Color.Lerp(px[y * w + x], dark, vig * 0.75f);
-                    px[y * w + x] = new Color(c.r + grain, c.g + grain, c.b + grain, 1f);
+                    float vig = Mathf.Clamp01((u * u + v * v) * 1.6f) * 0.55f;
+                    Color c = px[y * w + x];
+                    px[y * w + x] = new Color(c.r * (1 - vig), c.g * (1 - vig), c.b * (1 - vig), 1f);
                 }
             tex.SetPixels(px); tex.Apply();
             return tex;
+        }
+
+        static void Tri(float[] buf, int w, int h, Vector2 a, Vector2 b, Vector2 c, float v)
+        {
+            int x0 = Mathf.Max(0, (int)Mathf.Min(a.x, Mathf.Min(b.x, c.x))), x1 = Mathf.Min(w - 1, (int)Mathf.Max(a.x, Mathf.Max(b.x, c.x)) + 1);
+            int y0 = Mathf.Max(0, (int)Mathf.Min(a.y, Mathf.Min(b.y, c.y))), y1 = Mathf.Min(h - 1, (int)Mathf.Max(a.y, Mathf.Max(b.y, c.y)) + 1);
+            for (int y = y0; y <= y1; y++)
+                for (int x = x0; x <= x1; x++)
+                    if (InTri(new Vector2(x + .5f, y + .5f), a, b, c)) buf[y * w + x] = v;
+        }
+
+        static void TriColor(Color[] px, int w, int h, Vector2 a, Vector2 b, Vector2 c, Color col)
+        {
+            int x0 = Mathf.Max(0, (int)Mathf.Min(a.x, Mathf.Min(b.x, c.x))), x1 = Mathf.Min(w - 1, (int)Mathf.Max(a.x, Mathf.Max(b.x, c.x)) + 1);
+            int y0 = Mathf.Max(0, (int)Mathf.Min(a.y, Mathf.Min(b.y, c.y))), y1 = Mathf.Min(h - 1, (int)Mathf.Max(a.y, Mathf.Max(b.y, c.y)) + 1);
+            for (int y = y0; y <= y1; y++)
+                for (int x = x0; x <= x1; x++)
+                    if (InTri(new Vector2(x + .5f, y + .5f), a, b, c)) px[y * w + x] = col;
+        }
+
+        static bool InTri(Vector2 p, Vector2 a, Vector2 b, Vector2 c)
+        {
+            float d1 = (p.x - b.x) * (a.y - b.y) - (a.x - b.x) * (p.y - b.y);
+            float d2 = (p.x - c.x) * (b.y - c.y) - (b.x - c.x) * (p.y - c.y);
+            float d3 = (p.x - a.x) * (c.y - a.y) - (c.x - a.x) * (p.y - a.y);
+            bool neg = d1 < 0 || d2 < 0 || d3 < 0, pos = d1 > 0 || d2 > 0 || d3 > 0;
+            return !(neg && pos);
         }
 
         // ------------------------------------------------------------------ Widgets
@@ -168,10 +179,12 @@ namespace MageHero
 
         public static Text Label(Transform parent, string text, int size, Color color, Color outline, bool bold = true, TextAnchor anchor = TextAnchor.MiddleCenter)
         {
+            // Un solo efecto: sombra suave hacia abajo con el color indicado (antes contorno + sombra = letras "dobles" y borrosas).
             var t = UIText.Make(parent, "Label", text, size, color, anchor);
             if (bold) t.fontStyle = FontStyle.Bold;
-            var o = t.gameObject.AddComponent<Outline>(); o.effectColor = outline; o.effectDistance = new Vector2(2f, -2f);
-            var s = t.gameObject.AddComponent<Shadow>(); s.effectColor = new Color(0, 0, 0, .45f); s.effectDistance = new Vector2(0f, -4f);
+            var s = t.gameObject.AddComponent<Shadow>();
+            s.effectColor = new Color(outline.r * 0.6f, outline.g * 0.6f, outline.b * 0.6f, Mathf.Min(0.75f, outline.a));
+            s.effectDistance = new Vector2(0f, -Mathf.Clamp(size * 0.06f, 1.5f, 3f));
             return t;
         }
 
@@ -232,7 +245,7 @@ namespace MageHero
 
         // ------------------------------------------------------------------ Tema del juego (HUD y ventanas)
         public static readonly Color Navy = new Color(0.16f, 0.21f, 0.28f, 0.97f), NavyDeep = new Color(0.09f, 0.12f, 0.17f, 0.97f);
-        public static readonly Color Gold = Hex(0xffc21a), Cream = Hex(0xfff0b3);
+        public static readonly Color Gold = Hex(0xf0b33e), Cream = Hex(0xfff1d6);
 
         /// Fondo de las ventanas: azul pizarra con degradado y borde del color indicado.
         public static Sprite PanelSprite(Color border) => RoundedRect(Navy, NavyDeep, border, 26, 5);
@@ -258,10 +271,8 @@ namespace MageHero
             {
                 var r = Image("Ribbon", box.transform, Ribbon(ribbon, Darker(ribbon, 0.7f)), Color.white);
                 Place(r.rectTransform, new Vector2(.5f, 1f), new Vector2(0f, 6f), new Vector2(Mathf.Min(size.x * 0.7f, 560f), 92f));
-                r.rectTransform.localRotation = Quaternion.Euler(0, 0, 1.2f);
                 var rs = r.gameObject.AddComponent<Shadow>(); rs.effectColor = new Color(0, 0, 0, .45f); rs.effectDistance = new Vector2(0, -6);
                 var t = Label(r.transform, title, 40, Color.white, Darker(ribbon, 0.6f));
-                t.GetComponent<Outline>().effectDistance = new Vector2(3f, -3f);
                 // Títulos largos (p. ej. el del puente) se encogen para caber en la cinta.
                 t.horizontalOverflow = HorizontalWrapMode.Wrap; t.verticalOverflow = VerticalWrapMode.Truncate;
                 t.resizeTextForBestFit = true; t.resizeTextMinSize = 18; t.resizeTextMaxSize = 40;

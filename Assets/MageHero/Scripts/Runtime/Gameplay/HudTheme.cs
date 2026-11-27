@@ -89,9 +89,11 @@ namespace MageHero
 
         static void Outline(Text t, Color c, float d)
         {
-            var o = t.GetComponent<Outline>();
-            if (o == null) o = t.gameObject.AddComponent<Outline>();
-            o.effectColor = c; o.effectDistance = new Vector2(d, -d);
+            // Estilo low poly: una sola sombra hacia abajo (contorno + sombra hacía las letras dobles y borrosas).
+            foreach (var old in t.GetComponents<UnityEngine.UI.Outline>()) Object.Destroy(old);
+            var sh = t.GetComponent<Shadow>();
+            if (sh == null || sh is UnityEngine.UI.Outline) sh = t.gameObject.AddComponent<Shadow>();
+            sh.effectColor = new Color(c.r * 0.6f, c.g * 0.6f, c.b * 0.6f, Mathf.Min(0.75f, c.a)); sh.effectDistance = new Vector2(0f, -Mathf.Max(1.5f, d));
         }
     }
 }

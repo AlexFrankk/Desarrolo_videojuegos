@@ -353,10 +353,9 @@ namespace MageHero
         {
             var r = MenuStyle.Image("Ribbon", parent, MenuStyle.Ribbon(MenuStyle.Orange, MenuStyle.OrangeDark), Color.white);
             MenuStyle.Place(r.rectTransform, anchor ?? new Vector2(.5f, 1f), pos, size);
-            r.rectTransform.localRotation = Quaternion.Euler(0, 0, 1.5f);
+            r.rectTransform.localRotation = Quaternion.identity;   // recta: estilo low poly
             var sh = r.gameObject.AddComponent<Shadow>(); sh.effectColor = new Color(0, 0, 0, .45f); sh.effectDistance = new Vector2(0, -8);
             var t = MenuStyle.Label(r.transform, text, fontSize, Color.white, MenuStyle.OrangeDark);
-            t.GetComponent<Outline>().effectDistance = new Vector2(3f, -3f);
             MenuStyle.Stretch(t.rectTransform);
             t.rectTransform.offsetMin = new Vector2(40, 6);
             t.rectTransform.offsetMax = new Vector2(-40, 0);

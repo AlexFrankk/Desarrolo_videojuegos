@@ -23,6 +23,8 @@ namespace MageHero
         public readonly List<Transform> pileExtra = new List<Transform>();
         public Vector3 stumpTop, pileTop, spiritSeat, mageMark, mageFacing, staffGrip, golemFrom, golemStop, doorPoint;
         public Transform fallTree;
+        /// Árboles que estorban la ruta del Gólem (bosque → prado). Los derriba al salir del bosque en la escena 3.
+        public readonly List<Transform> pathTrees = new List<Transform>();
 
         static readonly Color Wood = Hex(0x8a5a34), WoodDark = Hex(0x5e3b21), WoodLight = Hex(0xd9b07a), Bark = Hex(0x6b4528);
         static readonly Color Roof = Hex(0x9b3d26), RoofDark = Hex(0x74291a), Stone = Hex(0x8f8a84), StoneDark = Hex(0x6b6763);
@@ -62,6 +64,9 @@ namespace MageHero
             golemFrom = G(GolemFromXZ);
             golemStop = G(GolemStopXZ);
             fallTree = NearestTree(FallTreeXZ, 3f);
+            // Ruta del Gólem: del bosque al prado y el claro donde se queda para el tutorial (sin troncos atravesados).
+            pathTrees.AddRange(ForestTrees.NearSegment(golemFrom, golemStop, 2.3f, fallTree));
+            foreach (var t in ForestTrees.NearSegment(golemStop, golemStop, 4.5f, fallTree)) if (!pathTrees.Contains(t)) pathTrees.Add(t);
         }
 
         // ------------------------------------------------------------------ cabaña

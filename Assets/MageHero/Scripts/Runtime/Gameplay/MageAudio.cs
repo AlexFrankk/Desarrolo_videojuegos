@@ -64,23 +64,23 @@ namespace MageHero
         static AudioClip enemyAlertClip, enemyDeathClip;
         static float lastEnemyAlertTime = -10f;
 
-        /// Rugido cuando un enemigo ve al jugador y va a por él.
+        /// Aviso cuando una criatura del bosque ve al jugador y va a por él (gorjeo corto, no un rugido de zombi).
         /// Pausa global corta para que varios enemigos que lo ven a la vez no se amontonen.
         public static void PlayEnemyAlert(Vector3 position)
         {
             if (Time.time - lastEnemyAlertTime < 0.8f) return;
-            if (enemyAlertClip == null) enemyAlertClip = Resources.Load<AudioClip>("Audio/MonstruoAlerta");
-            if (enemyAlertClip == null) { Debug.LogError("Could not load clip 'Audio/MonstruoAlerta'."); return; }
+            if (enemyAlertClip == null) enemyAlertClip = Resources.Load<AudioClip>("Audio/CriaturaAlerta");
+            if (enemyAlertClip == null) { Debug.LogError("Could not load clip 'Audio/CriaturaAlerta'."); return; }
             lastEnemyAlertTime = Time.time;
-            PlayDetached(enemyAlertClip, position, 0.8f, Random.Range(0.94f, 1.06f));
+            PlayDetached(enemyAlertClip, position, 0.45f, Random.Range(0.9f, 1.12f));
         }
 
-        /// Sonido de muerte del enemigo (el enemigo se destruye al instante, por eso suena desde un objeto aparte).
+        /// La criatura se esfuma al morir: "puf" suave de polvo (el enemigo se destruye al instante, por eso suena desde un objeto aparte).
         public static void PlayEnemyDeath(Vector3 position)
         {
-            if (enemyDeathClip == null) enemyDeathClip = Resources.Load<AudioClip>("Audio/MonstruoMuerte");
-            if (enemyDeathClip == null) { Debug.LogError("Could not load clip 'Audio/MonstruoMuerte'."); return; }
-            PlayDetached(enemyDeathClip, position, 0.9f, Random.Range(0.95f, 1.05f));
+            if (enemyDeathClip == null) enemyDeathClip = Resources.Load<AudioClip>("Audio/CriaturaEsfuma");
+            if (enemyDeathClip == null) { Debug.LogError("Could not load clip 'Audio/CriaturaEsfuma'."); return; }
+            PlayDetached(enemyDeathClip, position, 0.6f, Random.Range(0.92f, 1.08f));
         }
 
         // ------------------------------------------------------------------ UI (botones del menú)

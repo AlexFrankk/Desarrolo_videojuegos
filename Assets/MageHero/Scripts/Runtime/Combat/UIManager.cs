@@ -15,7 +15,14 @@ namespace MageHero
         public static UIManager Instance { get; private set; }
 
         [Serializable]
-        public class QuizData { public string title, subtitle, question; public string[] options; }
+        public class QuizData
+        {
+            public string title, subtitle, question; public string[] options;
+            /// Segundos para responder. 0 = automático según la operación (suma/resta 10 s, × ÷ 15 s, combinadas 20 s); < 0 = sin límite.
+            public float timeLimit;
+            /// Qué hacer si se acaba el tiempo. Si es null, cuenta como salir del problema (exitCallback).
+            [NonSerialized] public Action onTimeout;
+        }
 
         [Header("Jugador")]
         public HealthSystem playerHealth;
@@ -62,7 +69,14 @@ namespace MageHero
         string clueName = "Pergamino";
 
         static readonly Color Navy = new Color(0.114f, 0.208f, 0.341f, 1f), Gold = new Color(1f, 0.718f, 0.012f, 1f);
-        static readonly Color AnswerBg = new Color(1f, 0.83f, 0.35f, 1f), WrongBg = new Color(0.85f, 0.3f, 0.3f, 1f), RightBg = new Color(0.4f, 0.85f, 0.45f, 1f);
+        static Color AnswerBg => LowPolyUI.Tile;
+        static Color WrongBg => LowPolyUI.Wrong;
+        static Color RightBg => LowPolyUI.Right;
+
+        // Tiempo límite del problema
+        Image quizTimerFill; Text quizTimerText;
+        float quizTimeLimit, quizTimeLeft;
+        Action quizOnTimeout;
 
         void Awake()
         {
@@ -147,6 +161,8 @@ namespace MageHero
 
             // --- Invulnerable mientras lee o responde (los enemigos no deben castigar por pensar)
             if ((IsModalOpen || InCinematic) && playerHealth != null) playerHealth.SetInvulnerable(0.5f);
+
+            TickQuizTimer();
 
             // --- Teclado
             var kb = Keyboard.current;
@@ -241,8 +257,72 @@ namespace MageHero
             HidePrompt();
             if (!quizPanel.activeSelf) SetPlayerLocked(true);
             quizPanel.SetActive(true);
-            RefreshQuiz(data, "Elige la respuesta correcta (clic o teclas 1-4).");
+            RefreshQuiz(data, "");
+            StartQuizTimer(data);
         }
+
+        /// Tiempo según la dificultad: suma/resta 10 s, multiplicación o división 15 s, operaciones combinadas 20 s.
+        public static float AutoTimeLimit(string question)
+        {
+            if (string.IsNullOrEmpty(question)) return 10f;
+            int add = 0, mul = 0;
+            foreach (char c in question)
+            {
+                if (c == '+' || c == '−' || c == '-') add++;
+                else if (c == '×' || c == '÷' || c == '*' || c == '/') mul++;
+            }
+            if (mul > 0 && add > 0) return 20f;              // combinadas (p. ej. 7 + 3 × 4)
+            if (mul > 0) return 15f;
+            if (add >= 2) return 15f;                        // sumas y restas encadenadas
+            return 10f;
+        }
+
+        void StartQuizTimer(QuizData data)
+        {
+            quizTimeLimit = data.timeLimit < 0f ? 0f : (data.timeLimit > 0f ? data.timeLimit : AutoTimeLimit(data.question));
+            quizTimeLeft = quizTimeLimit;
+            quizOnTimeout = data.onTimeout;
+            if (quizTimerFill != null) { quizTimerFill.transform.parent.gameObject.SetActive(quizTimeLimit > 0f); quizTimerFill.fillAmount = 1f; quizTimerFill.color = LowPolyUI.Amber; }
+            if (quizTimerText != null) { quizTimerText.text = quizTimeLimit > 0f ? Mathf.CeilToInt(quizTimeLimit).ToString() : ""; quizTimerText.color = LowPolyUI.Cream; }
+        }
+
+        /// Cuenta atrás en tiempo real (funciona también con el juego en cámara lenta). Se detiene al responder o al leer la pista.
+        void TickQuizTimer()
+        {
+            if (quizTimeLimit <= 0f || quizPanel == null || !quizPanel.activeSelf || quizLocked) return;
+            if (cluePanel != null && cluePanel.activeSelf) return;
+            if (PauseMenu.IsOpen) return;
+            quizTimeLeft -= Time.unscaledDeltaTime;
+            float k = Mathf.Clamp01(quizTimeLeft / quizTimeLimit);
+            if (quizTimerFill != null)
+            {
+                quizTimerFill.fillAmount = k;
+                quizTimerFill.color = k > 0.35f ? LowPolyUI.Amber : Color.Lerp(LowPolyUI.Wrong, LowPolyUI.Amber, k / 0.35f);
+            }
+            if (quizTimerText != null)
+            {
+                quizTimerText.text = Mathf.CeilToInt(Mathf.Max(0f, quizTimeLeft)).ToString();
+                quizTimerText.color = k > 0.35f ? LowPolyUI.Cream : new Color(1f, 0.55f, 0.5f);
+            }
+            if (quizTimeLeft > 0f) return;
+
+            // ¡Tiempo! Se bloquean las opciones y se avisa a quien abrió el problema.
+            quizLocked = true;
+            foreach (var b in answerButtons) if (b != null) { b.interactable = false; b.GetComponent<Image>().color = Color.Lerp(AnswerBg, Color.gray, 0.5f); }
+            if (quizTitle != null) quizTitle.text = "¡Se acabó el tiempo!";
+            var cb = quizOnTimeout; quizOnTimeout = null;
+            if (cb != null) cb();
+            else StartCoroutine(TimeoutClose());
+        }
+
+        System.Collections.IEnumerator TimeoutClose()
+        {
+            yield return new WaitForSecondsRealtime(1.1f);
+            if (quizPanel == null || !quizPanel.activeSelf) yield break;
+            quizLocked = false;                                // para que CloseQuiz avise como "salir"
+            CloseQuiz(true);
+        }
+
 
         public void RefreshQuiz(QuizData data, string feedback)
         {
@@ -259,7 +339,8 @@ namespace MageHero
                 if (!has) continue;
                 b.interactable = true;
                 b.GetComponent<Image>().color = AnswerBg;
-                b.GetComponentInChildren<Text>().text = $"{i + 1})   {data.options[i]}";
+                var label = b.transform.Find("Label");
+                (label != null ? label.GetComponent<Text>() : b.GetComponentInChildren<Text>()).text = data.options[i];
             }
             SetFeedback(feedback, Color.white);
             RefreshHintButton();
@@ -387,7 +468,6 @@ namespace MageHero
 
             var msg = MenuStyle.Label(canvas, "", 34, Color.white, MenuStyle.OrangeDark);
             msg.name = "CombatMessage";
-            msg.GetComponent<Outline>().effectDistance = new Vector2(2.5f, -2.5f);
             var mrt = msg.rectTransform; mrt.anchorMin = mrt.anchorMax = new Vector2(.5f, .6f); mrt.pivot = new Vector2(.5f, .5f); mrt.sizeDelta = new Vector2(1000, 60);
 
             ui.playerHealthSlider = slider; ui.playerHealthFill = fill; ui.playerHealthText = value;
@@ -429,33 +509,54 @@ namespace MageHero
             var btext = MenuStyle.Label(badge.transform, "", 15, MenuStyle.Cream, new Color(0, 0, 0, .6f));
             Stretch(btext.rectTransform);
 
-            // ---------- Ventana del quiz (cinta con el título, botón X para salir)
-            var qBox = MenuStyle.Window(canvas, "QuizPanel", "Reto", new Vector2(700, 540), MenuStyle.Orange, () => ui.CloseQuiz(true), out var quiz);
-            var qTitle = qBox.Find("Ribbon").GetComponentInChildren<Text>();
-            var qSub = MenuStyle.Label(qBox, "", 17, MenuStyle.Cream, new Color(0, 0, 0, .6f), false);
-            qSub.horizontalOverflow = HorizontalWrapMode.Wrap;
-            Top(qSub.rectTransform, -76, new Vector2(620, 46));
-            var eqBg = MenuStyle.Image("EquationBox", qBox, MenuStyle.RoundedRect(new Color(0.04f, 0.07f, 0.12f, 1f), new Color(0.07f, 0.1f, 0.16f, 1f), MenuStyle.Gold, 20, 3), Color.white);
-            Top(eqBg.rectTransform, -126, new Vector2(600, 96));
-            var qQ = MenuStyle.Label(eqBg.transform, "", 50, Color.white, new Color(0, 0, 0, .7f));
+            // ---------- Ventana del problema (estilo low poly): fondo semitransparente, tarjeta facetada,
+            // el problema grande, una barra de tiempo y 4 opciones. Nada más.
+            var quiz = new GameObject("QuizPanel", typeof(RectTransform), typeof(Image));
+            quiz.transform.SetParent(canvas, false);
+            Stretch((RectTransform)quiz.transform);
+            var backdrop = quiz.GetComponent<Image>(); backdrop.color = LowPolyUI.Backdrop; backdrop.raycastTarget = true;   // transparencia: se ve el juego detrás
+            var card = LowPolyUI.Panel("Card", quiz.transform, 640, 420, LowPolyUI.Slate, 30, 3, 11);
+            card.rectTransform.anchoredPosition = new Vector2(0, 6);
+            var qBox = card.rectTransform;
+
+            var chip = LowPolyUI.Panel("TitleChip", qBox, 400, 50, LowPolyUI.Amber, 25, 2, 12, true, 0.06f);
+            var chrt = chip.rectTransform; chrt.anchorMin = chrt.anchorMax = new Vector2(.5f, 1f); chrt.anchoredPosition = new Vector2(0, -4);
+            var qTitle = LowPolyUI.Text(chip.transform, "Title", "Reto", 22, LowPolyUI.Cream);
+            Stretch(qTitle.rectTransform);
+
+            var eqBg = LowPolyUI.Panel("EquationBox", qBox, 560, 120, LowPolyUI.SlateDeep, 18, 2, 13, false, 0.05f);
+            Top(eqBg.rectTransform, -50, new Vector2(560, 120));
+            var qQ = LowPolyUI.Text(eqBg.transform, "Question", "", 60, LowPolyUI.Cream);
             Stretch(qQ.rectTransform);
+
+            // barra de tiempo (se vacía; ámbar → rojo) y segundos restantes
+            var barBg = LowPolyUI.Panel("TimerBar", qBox, 500, 16, LowPolyUI.SlateDeep, 8, 0, 14, true, 0.03f);
+            Top(barBg.rectTransform, -186, new Vector2(500, 16));
+            var fill = LowPolyUI.Panel("Fill", barBg.transform, 496, 12, LowPolyUI.Amber, 6, 0, 15, true, 0.05f);
+            fill.type = Image.Type.Filled; fill.fillMethod = Image.FillMethod.Horizontal; fill.fillOrigin = 0; fill.fillAmount = 1f;
+            var timerText = LowPolyUI.Text(qBox, "TimerText", "", 20, LowPolyUI.Cream);
+            Top(timerText.rectTransform, -180, new Vector2(60, 28));
+            timerText.rectTransform.anchoredPosition = new Vector2(285, -180);
+
             var buttons = new Button[4];
             for (int i = 0; i < 4; i++)
             {
-                var b = MenuStyle.TintButton("Answer_" + (i + 1), qBox, "", AnswerBg, 28, null, Navy);
+                var b = LowPolyUI.TileButton("Answer_" + (i + 1), qBox, 272, 78, 20 + i, out _);
                 var rt = (RectTransform)b.transform;
                 rt.anchorMin = rt.anchorMax = rt.pivot = new Vector2(.5f, 1f);
-                rt.anchoredPosition = new Vector2(i % 2 == 0 ? -152 : 152, -240 - (i / 2) * 78);
-                rt.sizeDelta = new Vector2(290, 64);
+                rt.anchoredPosition = new Vector2(i % 2 == 0 ? -144 : 144, -222 - (i / 2) * 92);
+                var key = LowPolyUI.Text(b.transform, "Key", (i + 1).ToString(), 17, new Color(1f, 0.96f, 0.88f, 0.55f), false);
+                var krt = key.rectTransform; krt.anchorMin = krt.anchorMax = new Vector2(0f, .5f); krt.anchoredPosition = new Vector2(46, 0); krt.sizeDelta = new Vector2(30, 30);
                 buttons[i] = b;
             }
-            var qFb = MenuStyle.Label(qBox, "", 18, Color.white, new Color(0, 0, 0, .6f), false);
-            Top(qFb.rectTransform, -398, new Vector2(640, 44));
-            qFb.horizontalOverflow = HorizontalWrapMode.Wrap;
-            var hintB = MenuStyle.TintButton("HintButton", qBox, "Ver pista (H)", MenuStyle.Gold, 19, null, new Color(0.3f, 0.17f, 0.05f));
-            var hrt = (RectTransform)hintB.transform; hrt.anchorMin = hrt.anchorMax = hrt.pivot = new Vector2(.5f, 0f); hrt.anchoredPosition = new Vector2(-135, 22); hrt.sizeDelta = new Vector2(270, 52);
-            var exitB = MenuStyle.TintButton("ExitButton", qBox, "Salir (Esc)", MenuStyle.Red, 19, null);
-            var ert = (RectTransform)exitB.transform; ert.anchorMin = ert.anchorMax = ert.pivot = new Vector2(.5f, 0f); ert.anchoredPosition = new Vector2(150, 22); ert.sizeDelta = new Vector2(220, 52);
+
+            // Se conservan (ocultos) para no romper a quien los use: subtítulo, mensajes, pista y salir.
+            var hidden = new GameObject("Hidden", typeof(RectTransform)); hidden.transform.SetParent(qBox, false); hidden.SetActive(false);
+            var qSub = UIText.Make(hidden.transform, "Sub", "", 16, Color.white);
+            var qFb = UIText.Make(hidden.transform, "Feedback", "", 16, Color.white);
+            var hintB = MakeButton("HintButton", hidden.transform, "Pista", Color.white, Color.black, 14);
+            var exitB = MakeButton("ExitButton", hidden.transform, "Salir", Color.white, Color.black, 14);
+            ui.quizTimerFill = fill; ui.quizTimerText = timerText;
             quiz.SetActive(false);
 
             // ---------- Ventana del pergamino (pista)

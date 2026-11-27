@@ -23,7 +23,7 @@ namespace MageHero
 
         static readonly Color Navy = new Color(0.114f, 0.208f, 0.341f, 0.97f), Gold = new Color(1f, 0.718f, 0.012f, 1f);
         static readonly Color Red = new Color(0.92f, 0.25f, 0.25f, 1f), Green = new Color(0.4f, 0.85f, 0.45f, 1f);
-        static readonly Color AnswerBg = new Color(1f, 0.83f, 0.35f, 1f), ButtonBg = new Color(0.3f, 0.55f, 0.95f, 1f);
+        static readonly Color AnswerBg = new Color(0.27f, 0.42f, 0.58f, 1f), ButtonBg = new Color(0.3f, 0.55f, 0.95f, 1f);
 
         GameObject root, choicePage, quizPage;
         Text equationText, feedbackText;
@@ -167,7 +167,7 @@ namespace MageHero
             for (int i = 0; i < 4; i++)
             {
                 int idx = i;
-                var b = MenuStyle.TintButton("Answer" + (i + 1), quizPage.transform, "", AnswerBg, 30, () => Answer(idx), new Color(0.114f, 0.208f, 0.341f));
+                var b = MenuStyle.TintButton("Answer" + (i + 1), quizPage.transform, "", AnswerBg, 30, () => Answer(idx), LowPolyUI.Cream);
                 MenuStyle.Place((RectTransform)b.transform, new Vector2(.5f, 1f), new Vector2(i % 2 == 0 ? -145 : 145, i < 2 ? -236 : -310), new Vector2(270, 62));
                 answerButtons[i] = b;
                 answerLabels[i] = b.GetComponentInChildren<Text>();
